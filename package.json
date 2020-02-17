@@ -1,0 +1,19 @@
+{
+  "name": "webgl",
+  "version": "1.0.0",
+  "dependencies": {
+    "fs-extra": "^8.1.0",
+    "gl-matrix": "^3.2.1",
+    "jquery": "^3.4.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^8.0.1",
+    "@types/gl-matrix": "^2.4.5",
+    "@types/jquery": "^3.3.32",
+    "@types/node": "^13.7.1",
+    "http-server": "^0.12.1"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
+  }
+}

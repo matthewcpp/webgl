@@ -1,0 +1,4 @@
+{
+  "attributes": ["aVertexPosition"],
+  "uniforms": ["uProjectionMatrix", "uModelViewMatrix", "fragColor"]
+}
