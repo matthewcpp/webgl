@@ -1,6 +1,7 @@
 import {Shader, ShaderInfo} from "./Shader.js";
 import {MeshBuffer, MeshData} from "./Mesh.js"
 import {Renderer} from "./Renderer.js";
+import {Texture} from "./Texture.js"
 
 export class WebGl {
     public readonly canvas: HTMLCanvasElement;
@@ -9,6 +10,7 @@ export class WebGl {
 
     public shaders = new Map<string, Shader>();
     public meshBuffers = new Map<string, MeshBuffer>();
+    public textures = new Map<string, WebGLTexture>();
     public renderFunc: (renderer: Renderer) => void;
 
     public constructor(canvas: HTMLCanvasElement) {
@@ -21,17 +23,20 @@ export class WebGl {
             throw new Error("Unable to initialize WebGL");
         }
 
+        // This extension is needed to support rendering meshes with > vertices.
         const ext = this.gl.getExtension('OES_element_index_uint');
         if (!ext) {
             throw new Error("Implementation does not support uint indices");
         }
 
+        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+
         this._renderer = new Renderer(this.gl);
 
-        this.gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
-        this.gl.clearDepth(1.0);                 // Clear everything
-        this.gl.enable(this.gl.DEPTH_TEST);           // Enable depth testing
-        this.gl.depthFunc(this.gl.LEQUAL);            // Near things obscure far things
+        this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        this.gl.clearDepth(1.0);
+        this.gl.enable(this.gl.DEPTH_TEST);
+        this.gl.depthFunc(this.gl.LEQUAL);
 
     }
 
@@ -77,12 +82,23 @@ export class WebGl {
 
     public createMeshBuffer(name: string, meshData: MeshData): MeshBuffer {
         if (this.meshBuffers.has(name)) {
-            throw new Error(`MeshBuffer with name: ${name} already exists`);
+            throw new Error(`MeshBuffer with name: ${name} already exists.`);
         }
 
         const meshBuffer = MeshBuffer.create(this.gl, meshData);
         this.meshBuffers.set(name, meshBuffer);
 
         return meshBuffer;
+    }
+
+    public createTexture(name: string, image: HTMLImageElement) {
+        if (this.textures.has(name)) {
+            throw new Error(`Texture with ${name} already exists.`);
+        }
+
+        const texture = Texture.create(this.gl, image);
+        this.textures.set(name, texture);
+
+        return texture;
     }
 }

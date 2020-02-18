@@ -6,6 +6,8 @@ import {Renderer} from "./Renderer.js";
 import {Camera} from "./Camera.js";
 import {Transform} from "./Transform.js";
 
+import * as Util from "./Util.js"
+
 import * as glMatrix from "../external/gl-matrix/common.js";
 import * as vec3 from "../external/gl-matrix/vec3.js"
 import * as vec4 from "../external/gl-matrix/vec4.js";
@@ -31,15 +33,25 @@ window.onload = async () => {
         ]);
 
         const shader = webGl.createShader(shaderName, shaderFiles[0], shaderFiles[1], shaderFiles[2] as ShaderInfo);
+        const texture = webGl.createTexture("texture", await Util.downloadImage("/textures/texture.png"));
+
         const material = new Material(shader);
-        material.vec4.set("fragColor", vec4.fromValues(0.2, 0.845, 0.7, 1.0));
+        material.vec4.set("fragColor", vec4.fromValues(1.0, 1.0, 1.0, 1.0));
+        material.texture.set("texture", texture);
 
         const meshData = new MeshData();
-        meshData.positions= [
+        meshData.positions = [
             1.0,  1.0, 0.0,
             -1.0,  1.0, 0.0,
             1.0, -1.0, 0.0,
             -1.0, -1.0, 0.0
+        ];
+
+        meshData.texCoords = [
+            1.0, 1.0,
+            0.0, 1.0,
+            1.0, 0.0,
+            0.0, 0.0
         ];
 
         meshData.triangles = [
@@ -48,8 +60,8 @@ window.onload = async () => {
 
         const meshBuffer = webGl.createMeshBuffer("mesh", meshData);
         const transform = new Transform();
-        vec3.set(transform.position, -5.0, 2.0, 0.0);
-        transform.updateMatrix();
+        //vec3.set(transform.position, -5.0, 2.0, 0.0);
+        //transform.updateMatrix();
 
         camera = new Camera();
         vec3.set(camera.transform.position, 0, 0, 10);
