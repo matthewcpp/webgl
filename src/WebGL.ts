@@ -85,7 +85,7 @@ export class WebGl {
             throw new Error(`MeshBuffer with name: ${name} already exists.`);
         }
 
-        const meshBuffer = MeshBuffer.create(this.gl, meshData);
+        const meshBuffer = MeshBuffer.create(this.gl, meshData, name);
         this.meshBuffers.set(name, meshBuffer);
 
         return meshBuffer;

@@ -1,4 +1,4 @@
-import {MeshBuffer} from "./Mesh.js";
+import {MeshBuffer, MeshVertexAttributes} from "./Mesh.js";
 import {Material} from "./Material.js";
 import {Camera} from "./Camera.js";
 import {Transform} from "./Transform.js";
@@ -46,13 +46,15 @@ export class Renderer {
         this.gl.uniformMatrix4fv(this._material.shader.uniforms.get("uModelViewMatrix"), false, modelView);
 
         const vertexPosition = this._material.shader.attributes.get("aVertexPosition");
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, meshBuffer.arrayBuffer);
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, meshBuffer.vertexBuffer);
         this.gl.vertexAttribPointer(vertexPosition, 3, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(vertexPosition);
 
-        const textCordPosition = this._material.shader.attributes.get("aTextureCoord");
-        this.gl.vertexAttribPointer(textCordPosition, 2, this.gl.FLOAT, false, 0, (meshBuffer.vertexCount * 3) * 4);
-        this.gl.enableVertexAttribArray(textCordPosition);
+        if (meshBuffer.hasVertexAttribute(MeshVertexAttributes.TexCoords)) {
+            const textCordPosition = this._material.shader.attributes.get("aTextureCoord");
+            this.gl.vertexAttribPointer(textCordPosition, 2, this.gl.FLOAT, false, 0, meshBuffer.getOffsetForAttribute(MeshVertexAttributes.TexCoords));
+            this.gl.enableVertexAttribArray(textCordPosition);
+        }
 
         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, meshBuffer.elementBuffer);
         const indexType = meshBuffer.elementCount > 65536 ? this.gl.UNSIGNED_INT: this.gl.UNSIGNED_SHORT;
