@@ -25,14 +25,7 @@ window.onload = async () => {
         let glCanvas = document.querySelector("#gl-canvas") as HTMLCanvasElement;
         webGl = new WebGl(glCanvas);
 
-        const shaderName = "basic";
-        const shaderFiles = await Promise.all([
-            jQuery.ajax(`/shaders/${shaderName}.vert.glsl`),
-            jQuery.ajax(`/shaders/${shaderName}.frag.glsl`),
-            jQuery.ajax(`/shaders/${shaderName}.json`)
-        ]);
-
-        const shader = webGl.createShader(shaderName, shaderFiles[0], shaderFiles[1], shaderFiles[2] as ShaderInfo);
+        const shader = webGl.createShader("basic", await Util.downloadShader("basic"));
         const texture = webGl.createTexture("texture", await Util.downloadImage("/textures/texture.png"));
 
         const material = new Material(shader);

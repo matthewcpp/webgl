@@ -1,4 +1,4 @@
-import {Shader, ShaderInfo} from "./Shader.js";
+import {Shader, ShaderData} from "./Shader.js";
 import {MeshBuffer, MeshData} from "./Mesh.js"
 import {Renderer} from "./Renderer.js";
 import {Texture} from "./Texture.js"
@@ -69,12 +69,12 @@ export class WebGl {
         this.canvas.height = this.canvas.clientHeight;
     }
 
-    public createShader(name: string, vertexSource: string, fragmentSource: string, info: ShaderInfo): Shader {
+    public createShader(name: string, shaderData: ShaderData): Shader {
         if (this.shaders.has(name)) {
             throw new Error(`Shader with name: ${name} already exists.`);
         }
 
-        const shader = Shader.create(this.gl, name, vertexSource, fragmentSource, info);
+        const shader = Shader.create(this.gl, name, shaderData);
         this.shaders.set(name, shader);
 
         return shader;

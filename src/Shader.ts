@@ -3,6 +3,12 @@ export interface ShaderInfo {
     uniforms: string[];
 }
 
+export class ShaderData {
+    public vertexSource: string;
+    public fragmentSource: string;
+    public info: ShaderInfo;
+}
+
 export class Shader {
     public readonly program: WebGLProgram;
     public readonly attributes: Map<string, number>;
@@ -14,18 +20,18 @@ export class Shader {
         this.uniforms = uniforms;
     }
 
-    public static create(gl: WebGLRenderingContext, name: string, vertexSource: string, fragmentSource: string, info: ShaderInfo): Shader {
-        if (!info.attributes) {
+    public static create(gl: WebGLRenderingContext, name: string, shaderData: ShaderData): Shader {
+        if (!shaderData.info.attributes) {
             throw new Error(`Error compiling ${name}: Shader info must contain attributes array.`)
         }
 
-        if (!info.uniforms) {
+        if (!shaderData.info.uniforms) {
             throw new Error(`Error compiling ${name}: Shader info must contain uniforms array.`)
         }
 
-        const shaderProgram = Shader.compileShader(gl, vertexSource, fragmentSource);
-        const attributeLocations = Shader.getAttributeLocations(gl, name, shaderProgram, info);
-        const uniformLocations = Shader.getUniformLocations(gl, name, shaderProgram, info);
+        const shaderProgram = Shader.compileShader(gl, shaderData.vertexSource, shaderData.fragmentSource);
+        const attributeLocations = Shader.getAttributeLocations(gl, name, shaderProgram, shaderData.info);
+        const uniformLocations = Shader.getUniformLocations(gl, name, shaderProgram, shaderData.info);
 
         return new Shader(shaderProgram, attributeLocations, uniformLocations);
     }
