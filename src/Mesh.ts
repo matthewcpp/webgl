@@ -1,5 +1,6 @@
 export class MeshData {
     public positions: number[] = [];
+    public normals: number[] = [];
     public texCoords: number[] = [];
 
     public triangles: number[] = [];
@@ -7,6 +8,7 @@ export class MeshData {
 
 export enum MeshVertexAttributes {
     Positions = 1,
+    Normals = 2,
     TexCoords = 4
 }
 
@@ -35,8 +37,16 @@ export class MeshBuffer {
         switch (attribute) {
             case MeshVertexAttributes.Positions:
                 return 0;
-            case MeshVertexAttributes.TexCoords: {
+            case MeshVertexAttributes.Normals:
                 return this.vertexCount * 3 * 4;
+
+            case MeshVertexAttributes.TexCoords: {
+                let offset = this.vertexCount * 3;
+                if (this.hasVertexAttribute(MeshVertexAttributes.Normals)) {
+                    offset *= 2;
+                }
+
+                return offset * 4;
             }
         }
     }
@@ -45,13 +55,19 @@ export class MeshBuffer {
     public static create(gl:WebGLRenderingContext, meshData: MeshData, name: string): MeshBuffer {
         MeshBuffer._validateMeshData(meshData, name);
 
-        const bufferSize = meshData.positions.length + meshData.texCoords.length;
+        const bufferSize = meshData.positions.length + meshData.normals.length + meshData.texCoords.length;
         const bufferData = new Float32Array(bufferSize);
 
         let bufferIndex = 0;
         bufferData.set(meshData.positions, 0);
         bufferIndex += meshData.positions.length;
         let vertexAttributes = MeshVertexAttributes.Positions;
+
+        if (meshData.normals.length > 0) {
+            bufferData.set(meshData.normals, bufferIndex);
+            bufferIndex += meshData.normals.length;
+            vertexAttributes |= MeshVertexAttributes.Normals;
+        }
 
         if (meshData.texCoords.length > 0) {
             bufferData.set(meshData.texCoords, bufferIndex);
