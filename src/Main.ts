@@ -1,5 +1,5 @@
 import {WebGl} from "./WebGL.js";
-import {MeshBufferData, MeshInfo} from "./Mesh.js";
+import {MeshBuffer, MeshBufferData, MeshInfo} from "./Mesh.js";
 import {Renderer} from "./Renderer.js";
 import {Camera} from "./Camera.js";
 import {Transform} from "./Transform.js";
@@ -23,17 +23,16 @@ window.onload = async () => {
         const meshBuffer = webGl.createMeshBuffer("mesh", await downloadModel("/models/basic.model"));
 
         const transform = new Transform();
-        //vec3.set(transform.position, -5.0, 2.0, 0.0);
-        //transform.updateMatrix();
 
         camera = new Camera();
-        vec3.set(camera.transform.position, 0, 0, 10);
-        vec3.set(camera.transform.rotation, 0, 180.0, 0.0);
-        camera.transform.updateMatrix();
-        camera.updateViewMatrix();
+        console.log(camera.transform.forward());
+        setCameraPos(camera, meshBuffer);
 
         camera.aspect = webGl.canvas.width / webGl.canvas.height;
         camera.updateProjectionMatrix();
+
+        console.log(camera.transform.forward());
+        console.log(camera.transform.up());
 
         webGl.renderFunc = (renderer: Renderer) => {
             renderer.setCamera(camera);
@@ -54,3 +53,18 @@ window.onresize = () => {
     camera.aspect = webGl.canvas.width / webGl.canvas.height;
     camera.updateProjectionMatrix();
 };
+
+function setCameraPos(camera: Camera, mesh: MeshBuffer) {
+    let center = mesh.bounds.center();
+    let cameraPos = mesh.bounds.center();
+    let cameraDir = vec3.fromValues(0.0, 0.0, 1.0);
+    vec3.scale(cameraDir, cameraDir, vec3.distance(mesh.bounds.min, mesh.bounds.max) * 1.5);
+
+    vec3.add(cameraPos, cameraPos, cameraDir);
+    vec3.copy(camera.transform.position, cameraPos);
+
+    camera.transform.lookAt(center);
+
+    camera.transform.updateMatrix();
+    camera.updateViewMatrix();
+}

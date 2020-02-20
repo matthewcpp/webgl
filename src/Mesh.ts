@@ -1,3 +1,4 @@
+import {Bounds} from "./Bounds.js"
 import * as vec3 from "../external/gl-matrix/vec3.js"
 
 export enum MeshVertexAttributes {
@@ -105,8 +106,7 @@ export class MeshBuffer {
     public readonly elementBuffer: WebGLBuffer;
     public readonly elementCount: number;
 
-    public min: vec3;
-    public max: vec3;
+    public readonly bounds: Bounds;
 
     constructor(vertexBuffer: WebGLBuffer, vertexCount:number, vertexAttributes: MeshVertexAttributes,
                 elementBuffer: WebGLBuffer, elementCount: number,
@@ -118,8 +118,7 @@ export class MeshBuffer {
         this.elementBuffer = elementBuffer;
         this.elementCount = elementCount;
 
-        this.min = min;
-        this.max = max;
+        this.bounds = Bounds.createFromMinMax(min, max);
     }
 
     public hasVertexAttribute(attribute: MeshVertexAttributes) {
