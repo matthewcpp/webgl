@@ -1,5 +1,5 @@
 import {WebGl} from "./WebGL.js";
-import {MeshData} from "./Mesh.js";
+import {MeshBufferData, MeshInfo} from "./Mesh.js";
 import {Renderer} from "./Renderer.js";
 import {Camera} from "./Camera.js";
 import {Transform} from "./Transform.js";
@@ -7,7 +7,7 @@ import {Transform} from "./Transform.js";
 import * as glMatrix from "../external/gl-matrix/common.js";
 import * as vec3 from "../external/gl-matrix/vec3.js"
 
-import {downalodMaterial} from "./Util.js";
+import {downalodMaterial, downloadModel} from "./Util.js";
 
 let webGl: WebGl = null;
 let camera: Camera = null;
@@ -20,34 +20,8 @@ window.onload = async () => {
         webGl = new WebGl(glCanvas);
 
         const material = await downalodMaterial("/materials/basic.json", webGl);
+        const meshBuffer = webGl.createMeshBuffer("mesh", await downloadModel("/models/basic.model"));
 
-        const meshData = new MeshData();
-        meshData.positions = [
-            1.0,  1.0, 0.0,
-            -1.0,  1.0, 0.0,
-            1.0, -1.0, 0.0,
-            -1.0, -1.0, 0.0
-        ];
-
-        meshData.normals = [
-          0.0, 0.0, 1.0,
-          0.0, 0.0, 1.0,
-          0.0, 0.0, 1.0,
-          0.0, 0.0, 1.0
-        ];
-
-        meshData.texCoords = [
-            1.0, 1.0,
-            0.0, 1.0,
-            1.0, 0.0,
-            0.0, 0.0
-        ];
-
-        meshData.triangles = [
-            0,1,2,2,1,3
-        ];
-
-        const meshBuffer = webGl.createMeshBuffer("mesh", meshData);
         const transform = new Transform();
         //vec3.set(transform.position, -5.0, 2.0, 0.0);
         //transform.updateMatrix();

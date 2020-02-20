@@ -1,6 +1,9 @@
 import {ShaderData, ShaderInfo} from "./Shader.js";
 import {Material, MaterialInfo} from "./Material.js";
 import {WebGl} from "./WebGL.js";
+import {MeshBufferData, MeshVertexAttributes} from "./Mesh.js";
+
+import * as vec3 from "../external/gl-matrix/vec3.js"
 
 import "../external/jquery.min.js";
 
@@ -29,6 +32,65 @@ export async function downloadShader(name: string) {
     shaderData.info = shaderFiles[2] as ShaderInfo;
 
     return shaderData;
+}
+
+function downloadArrayBuffer(url: string) {
+    return new Promise<ArrayBuffer>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.open("GET", url);
+        xhr.responseType = "arraybuffer";
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                resolve(xhr.response as ArrayBuffer);
+            }
+            else {
+                reject(`Error loading: ${url}.  Response code: ${xhr.status}`);
+            }
+        };
+
+        xhr.send();
+    });
+}
+
+export async function downloadModel(url: string) {
+    const modelData = await downloadArrayBuffer(url);
+
+    const dataView = new DataView(modelData);
+
+    let dataIndex = 0;
+    const vertexAttributes = dataView.getUint32(dataIndex, true) as MeshVertexAttributes;
+    dataIndex += 4;
+
+    const vertexCount = dataView.getUint32(dataIndex, true);
+    dataIndex += 4;
+
+    const vertexBufferSize = dataView.getUint32(dataIndex, true);
+    dataIndex += 4;
+
+    const vertexBuffer = new Float32Array(modelData, dataIndex, vertexBufferSize / 4);
+    dataIndex += (vertexBufferSize);
+
+    const elementCount = dataView.getUint32(dataIndex, true);
+    dataIndex += 4;
+
+    const elementSize = dataView.getUint32(dataIndex, true);
+    dataIndex += 4;
+
+    // not currently used
+    // const elementDataSize = dataView.getUint32(dataIndex, true);
+    dataIndex += 4;
+
+    const elementBuffer = (elementSize === 2) ? new Uint16Array(modelData, dataIndex, elementCount) : new Uint32Array(modelData, dataIndex, elementCount)
+    dataIndex += elementCount + elementSize;
+
+    const min = vec3.fromValues(dataView.getFloat32(dataIndex, true), dataView.getFloat32(dataIndex + 4, true), dataView.getFloat32(dataIndex + 8, true));
+    dataIndex += 12;
+
+    const max = vec3.fromValues(dataView.getFloat32(dataIndex, true), dataView.getFloat32(dataIndex + 4, true), dataView.getFloat32(dataIndex + 8, true));
+    dataIndex += 12;
+
+    return new MeshBufferData(vertexAttributes, vertexBuffer, vertexCount, elementBuffer, elementCount, min, max);
 }
 
 export async function downalodMaterial(url: string, webgl: WebGl) {

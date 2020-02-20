@@ -1,5 +1,5 @@
 import {Shader, ShaderData} from "./Shader.js";
-import {MeshBuffer, MeshData} from "./Mesh.js"
+import {MeshBuffer, MeshBufferData} from "./Mesh.js"
 import {Renderer} from "./Renderer.js";
 import {Texture} from "./Texture.js"
 
@@ -37,7 +37,6 @@ export class WebGl {
         this.gl.clearDepth(1.0);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
-
     }
 
     public start() {
@@ -80,12 +79,12 @@ export class WebGl {
         return shader;
     }
 
-    public createMeshBuffer(name: string, meshData: MeshData): MeshBuffer {
+    public createMeshBuffer(name: string, meshData: MeshBufferData): MeshBuffer {
         if (this.meshBuffers.has(name)) {
             throw new Error(`MeshBuffer with name: ${name} already exists.`);
         }
 
-        const meshBuffer = MeshBuffer.create(this.gl, meshData, name);
+        const meshBuffer = MeshBuffer.create(this.gl, meshData);
         this.meshBuffers.set(name, meshBuffer);
 
         return meshBuffer;
