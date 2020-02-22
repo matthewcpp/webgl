@@ -19,11 +19,11 @@ export function downloadImage(url: string): Promise<HTMLImageElement> {
     });
 }
 
-export async function downloadShader(name: string) {
+export async function downloadShader(shaderBasePath: string) {
     const shaderFiles = await Promise.all([
-        jQuery.ajax(`/shaders/${name}.vert.glsl`),
-        jQuery.ajax(`/shaders/${name}.frag.glsl`),
-        jQuery.ajax(`/shaders/${name}.json`)
+        jQuery.ajax(`${shaderBasePath}.vert.glsl`),
+        jQuery.ajax(`${shaderBasePath}.frag.glsl`),
+        jQuery.ajax(`${shaderBasePath}.shader.json`)
     ]);
 
     const shaderData = new ShaderData();
@@ -81,8 +81,8 @@ export async function downloadModel(url: string) {
     // const elementDataSize = dataView.getUint32(dataIndex, true);
     dataIndex += 4;
 
-    const elementBuffer = (elementSize === 2) ? new Uint16Array(modelData, dataIndex, elementCount) : new Uint32Array(modelData, dataIndex, elementCount)
-    dataIndex += elementCount + elementSize;
+    const elementBuffer = (elementSize === 2) ? new Uint16Array(modelData, dataIndex, elementCount) : new Uint32Array(modelData, dataIndex, elementCount);
+    dataIndex += elementCount * elementSize;
 
     const min = vec3.fromValues(dataView.getFloat32(dataIndex, true), dataView.getFloat32(dataIndex + 4, true), dataView.getFloat32(dataIndex + 8, true));
     dataIndex += 12;
@@ -116,7 +116,7 @@ export async function downalodMaterial(url: string, webgl: WebGl) {
 
         let webglTexture = webgl.textures.get(textureName);
         if (!webglTexture) {
-            webglTexture = webgl.createTexture(texture, await downloadImage(`/textures/${textureName}`));
+            webglTexture = webgl.createTexture(texture, await downloadImage(textureName));
         }
 
         material.texture.set(texture, webglTexture);

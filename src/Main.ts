@@ -6,35 +6,50 @@ import {Transform} from "./Transform.js";
 
 import * as glMatrix from "../external/gl-matrix/common.js";
 import * as vec3 from "../external/gl-matrix/vec3.js"
+import * as quat from "../external/gl-matrix/quat.js"
 
 import {downalodMaterial, downloadModel} from "./Util.js";
 
 let webGl: WebGl = null;
 let camera: Camera = null;
 
+const rotationSpeed = 90.0;
+
 window.onload = async () => {
     glMatrix.setMatrixArrayType(Array);
+
+    let rotationAngles = vec3.fromValues(-90.0, 0.0, 0.0);
+    let lastUpdateTime: DOMHighResTimeStamp = 0;
 
     try {
         let glCanvas = document.querySelector("#gl-canvas") as HTMLCanvasElement;
         webGl = new WebGl(glCanvas);
 
-        const material = await downalodMaterial("/materials/basic.json", webGl);
-        const meshBuffer = webGl.createMeshBuffer("mesh", await downloadModel("/models/basic.model"));
+        const material = await downalodMaterial("/assets/basic.material.json", webGl);
+        const meshBuffer = webGl.createMeshBuffer("mesh", await downloadModel("/assets/chalet.model"));
 
         const transform = new Transform();
+        quat.fromEuler(transform.rotation, rotationAngles[0], rotationAngles[1], rotationAngles[2]);
+        transform.updateMatrix();
 
         camera = new Camera();
-        console.log(camera.transform.forward());
         setCameraPos(camera, meshBuffer);
 
         camera.aspect = webGl.canvas.width / webGl.canvas.height;
         camera.updateProjectionMatrix();
 
-        console.log(camera.transform.forward());
-        console.log(camera.transform.up());
+        webGl.renderFunc = (timestamp: DOMHighResTimeStamp, renderer: Renderer) => {
+            if (lastUpdateTime == 0) lastUpdateTime = timestamp;
+            const timeDelta = (timestamp - lastUpdateTime) / 1000.0;
+            lastUpdateTime = timestamp;
 
-        webGl.renderFunc = (renderer: Renderer) => {
+            rotationAngles[1] += timeDelta * rotationSpeed;
+            if (rotationAngles[1] >= 360.0)
+                rotationAngles[1] -= 360.0;
+
+            quat.fromEuler(transform.rotation, rotationAngles[0], rotationAngles[1], rotationAngles[2]);
+            transform.updateMatrix();
+
             renderer.setCamera(camera);
             renderer.activateMaterial(material);
             renderer.drawMeshBuffer(meshBuffer, transform);

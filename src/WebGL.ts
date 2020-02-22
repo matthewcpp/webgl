@@ -11,7 +11,7 @@ export class WebGl {
     public shaders = new Map<string, Shader>();
     public meshBuffers = new Map<string, MeshBuffer>();
     public textures = new Map<string, WebGLTexture>();
-    public renderFunc: (renderer: Renderer) => void;
+    public renderFunc: (timestamp: DOMHighResTimeStamp, renderer: Renderer) => void;
 
     public constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -40,12 +40,12 @@ export class WebGl {
     }
 
     public start() {
-        requestAnimationFrame(() => {
-            this.drawScene();
+        requestAnimationFrame((timestamp: DOMHighResTimeStamp) => {
+            this.drawScene(timestamp);
         });
     }
 
-    private drawScene() {
+    private drawScene(timestamp: DOMHighResTimeStamp) {
         const gl = this.gl;
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -53,11 +53,11 @@ export class WebGl {
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
         if (this.renderFunc !== null) {
-            this.renderFunc(this._renderer);
+            this.renderFunc(timestamp, this._renderer);
         }
 
-        requestAnimationFrame(() => {
-            this.drawScene();
+        requestAnimationFrame((timestamp: DOMHighResTimeStamp) => {
+            this.drawScene(timestamp);
         });
     }
 
