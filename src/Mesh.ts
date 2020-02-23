@@ -143,7 +143,7 @@ export class MeshBuffer {
         }
     }
 
-    public static create(gl:WebGLRenderingContext, meshBufferData: MeshBufferData): MeshBuffer {
+    public static create(gl:WebGL2RenderingContext, meshBufferData: MeshBufferData): MeshBuffer {
         const arrayBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, arrayBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, meshBufferData.vertexBuffer, gl.STATIC_DRAW);

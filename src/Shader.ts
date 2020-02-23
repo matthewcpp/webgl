@@ -20,7 +20,7 @@ export class Shader {
         this.uniforms = uniforms;
     }
 
-    public static create(gl: WebGLRenderingContext, name: string, shaderData: ShaderData): Shader {
+    public static create(gl: WebGL2RenderingContext, name: string, shaderData: ShaderData): Shader {
         if (!shaderData.info.attributes) {
             throw new Error(`Error compiling ${name}: Shader info must contain attributes array.`)
         }
@@ -36,7 +36,7 @@ export class Shader {
         return new Shader(shaderProgram, attributeLocations, uniformLocations);
     }
 
-    private static compileShader(gl:WebGLRenderingContext, vertexSource: string, fragmentSource: string) {
+    private static compileShader(gl:WebGL2RenderingContext, vertexSource: string, fragmentSource: string) {
         const vertexShader = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vertexShader, vertexSource);
         gl.compileShader(vertexShader);
@@ -77,7 +77,7 @@ export class Shader {
         return shaderProgram;
     }
 
-    private static getAttributeLocations(gl: WebGLRenderingContext, name: string, program: WebGLProgram, info: ShaderInfo): Map<string, number> {
+    private static getAttributeLocations(gl: WebGL2RenderingContext, name: string, program: WebGLProgram, info: ShaderInfo): Map<string, number> {
         const locations = new Map<string, number>();
 
         for (const attribute of info.attributes) {
@@ -94,7 +94,7 @@ export class Shader {
         return locations;
     }
 
-    private static getUniformLocations(gl: WebGLRenderingContext, name: string, program: WebGLProgram, info: ShaderInfo): Map<string, WebGLUniformLocation> {
+    private static getUniformLocations(gl: WebGL2RenderingContext, name: string, program: WebGLProgram, info: ShaderInfo): Map<string, WebGLUniformLocation> {
         const locations = new Map<string, WebGLUniformLocation>();
 
         for (const uniform of info.uniforms) {

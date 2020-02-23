@@ -1,3 +1,5 @@
+#version 300 es
+
 attribute vec4 aVertexPosition;
 attribute vec2 aTextureCoord;
 

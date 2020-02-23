@@ -1,6 +1,6 @@
 export class Texture {
 
-    public static create(gl: WebGLRenderingContext, image: HTMLImageElement): WebGLTexture {
+    public static create(gl: WebGL2RenderingContext, image: HTMLImageElement): WebGLTexture {
         const texture = gl.createTexture();
 
         gl.bindTexture(gl.TEXTURE_2D, texture);

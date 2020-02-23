@@ -8,12 +8,12 @@ import * as mat4 from "../external/gl-matrix/mat4.js";
 
 
 export class Renderer {
-    private gl: WebGLRenderingContext;
+    private gl: WebGL2RenderingContext;
 
     private _camera: Camera = null;
     private _material: Material = null;
 
-    constructor(gl: WebGLRenderingContext) {
+    constructor(gl: WebGL2RenderingContext) {
         this.gl = gl;
     }
 

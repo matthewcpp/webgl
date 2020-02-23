@@ -5,7 +5,7 @@ import {Texture} from "./Texture.js"
 
 export class WebGl {
     public readonly canvas: HTMLCanvasElement;
-    private readonly gl: WebGLRenderingContext;
+    private readonly gl: WebGL2RenderingContext;
     private readonly _renderer: Renderer;
 
     public shaders = new Map<string, Shader>();
@@ -17,16 +17,10 @@ export class WebGl {
         this.canvas = canvas;
         this.resizeCanvas();
 
-        this.gl = this.canvas.getContext('webgl');
+        this.gl = this.canvas.getContext('webgl2');
 
         if (this.gl === null) {
-            throw new Error("Unable to initialize WebGL");
-        }
-
-        // This extension is needed to support rendering meshes with > vertices.
-        const ext = this.gl.getExtension('OES_element_index_uint');
-        if (!ext) {
-            throw new Error("Implementation does not support uint indices");
+            throw new Error("Unable to initialize WebGL 2.0");
         }
 
         this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
