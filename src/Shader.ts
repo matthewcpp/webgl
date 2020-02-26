@@ -1,6 +1,10 @@
+import {UniformBlock, UniformBlockInfo} from "./UniformBlock.js";
+
 export interface ShaderInfo {
     attributes: string[];
     uniforms: string[];
+    uniformBufferSize: number;
+    uniformBlocks: UniformBlockInfo[];
 }
 
 export class ShaderData {
@@ -13,11 +17,33 @@ export class Shader {
     public readonly program: WebGLProgram;
     public readonly attributes: Map<string, number>;
     public readonly uniforms: Map<string, WebGLUniformLocation>;
+    public readonly uniformBlocks: Map<string, UniformBlock>;
 
-    constructor(program: WebGLProgram, attributes: Map<string, number>, uniforms: Map<string, WebGLUniformLocation>) {
+    public readonly uniformBuffer: WebGLBuffer;
+    public readonly clientData: ArrayBuffer;
+
+    constructor(program: WebGLProgram, attributes: Map<string, number>, uniforms: Map<string, WebGLUniformLocation>,
+                uniformBuffer: WebGLBuffer, clientData: ArrayBuffer, uniformBlocks: Map<string, UniformBlock>) {
         this.program = program;
         this.attributes = attributes;
         this.uniforms = uniforms;
+
+        this.uniformBuffer = uniformBuffer;
+        this.clientData = clientData;
+        this.uniformBlocks = uniformBlocks;
+    }
+
+    /** pushes the current state of the client array to the openGL buffer */
+    public updateUniformBuffer(gl: WebGL2RenderingContext){
+        gl.bindBuffer(gl.UNIFORM_BUFFER, this.uniformBuffer);
+        gl.bufferSubData(gl.UNIFORM_BUFFER, 0, this.clientData);
+    }
+
+    /** Sets up the uniform block bindings for this shader.  Note this should be called right after glUseProgram. */
+    public bindUniformBlocks(gl: WebGL2RenderingContext) {
+        this.uniformBlocks.forEach((block: UniformBlock) => {
+            gl.uniformBlockBinding(this.program, block.blockIndex, block.bindPoint);
+        });
     }
 
     public static create(gl: WebGL2RenderingContext, name: string, shaderData: ShaderData): Shader {
@@ -30,10 +56,24 @@ export class Shader {
         }
 
         const shaderProgram = Shader.compileShader(gl, shaderData.vertexSource, shaderData.fragmentSource);
-        const attributeLocations = Shader.getAttributeLocations(gl, name, shaderProgram, shaderData.info);
-        const uniformLocations = Shader.getUniformLocations(gl, name, shaderProgram, shaderData.info);
+        const clientData = new ArrayBuffer(shaderData.info.uniformBufferSize);
+        const uniformBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.UNIFORM_BUFFER, uniformBuffer);
+        gl.bufferData(gl.UNIFORM_BUFFER, clientData, gl.DYNAMIC_DRAW);
 
-        return new Shader(shaderProgram, attributeLocations, uniformLocations);
+        try {
+            const attributeLocations = Shader.getAttributeLocations(gl, name, shaderProgram, shaderData.info);
+            const uniformLocations = Shader.getUniformLocations(gl, name, shaderProgram, shaderData.info);
+            const uniformBlocks = Shader.createUniformBlocks(gl, shaderProgram, name, shaderData.info, uniformBuffer, clientData);
+
+            return new Shader(shaderProgram, attributeLocations, uniformLocations, uniformBuffer, clientData, uniformBlocks);
+        }
+        catch (e) {
+            gl.deleteProgram(shaderProgram);
+            gl.deleteBuffer(uniformBuffer);
+
+            throw e;
+        }
     }
 
     private static compileShader(gl:WebGL2RenderingContext, vertexSource: string, fragmentSource: string) {
@@ -109,5 +149,50 @@ export class Shader {
         }
 
         return locations;
+    }
+
+    private static nextUniformBlockBindPoint = 0;
+
+    /**
+     * Creates all the uniform block storage for this shader.
+     * Note that all unform blocks will be tightly packed into the client data array that is passed into this function.
+     * Each uniform block in the shader will have its own unique bind point.
+     * This function assumes that the uniform block is using std140 alignment for all uniform blocks.
+     * TODO: explicitly handle alignment rules.  For now assume that all types used in blocks align nicely.
+     */
+    private static createUniformBlocks(gl: WebGL2RenderingContext, shader: WebGLProgram, name: string, info: ShaderInfo, uniformBuffer: WebGLBuffer, clientBuffer: ArrayBuffer): Map<string, UniformBlock> {
+        const uniformBlocks = new Map<string, UniformBlock>();
+        let bufferOffest = 0;
+
+        for (const uniformBlockInfo of info.uniformBlocks) {
+            let blockSize = 0;
+            const blockIndex = gl.getUniformBlockIndex(shader, uniformBlockInfo.name);
+
+            if (blockIndex === gl.INVALID_INDEX) {
+                throw new Error(`Error Building shader: ${name}.  Could not locate Uniform block: ${uniformBlockInfo.name}`);
+            }
+
+            const uniformBlock = new UniformBlock(blockIndex, Shader.nextUniformBlockBindPoint++);
+            uniformBlocks.set(uniformBlockInfo.name, uniformBlock);
+
+            for (const member of uniformBlockInfo.members) {
+                switch (member.type) {
+                    case "mat4":
+                        const bufferView = new Float32Array(clientBuffer, blockSize, 16);
+                        uniformBlock.members.set(member.name, bufferView);
+                        blockSize += 64;
+                        break;
+
+                    default:
+                        throw new Error(`Error Building shader: ${name}.  Unsupported data type: '${member.type}'`);
+                }
+            }
+
+            gl.bindBufferRange(gl.UNIFORM_BUFFER, uniformBlock.bindPoint, uniformBuffer, bufferOffest, blockSize);
+
+            bufferOffest += blockSize;
+        }
+
+        return uniformBlocks;
     }
 }

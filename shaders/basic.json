@@ -1,4 +1,0 @@
-{
-  "attributes": ["aVertexPosition", "aTextureCoord"],
-  "uniforms": ["uProjectionMatrix", "uModelViewMatrix", "fragColor", "uSampler"]
-}

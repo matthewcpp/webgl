@@ -1,18 +1,20 @@
 #version 300 es
 
-attribute vec4 aVertexPosition;
-attribute vec2 aTextureCoord;
+in vec4 aVertexPosition;
+in vec2 aTextureCoord;
 
-uniform mat4 uModelViewMatrix;
-uniform mat4 uProjectionMatrix;
+layout(std140) uniform UniformBuffer {
+    mat4 modelView;
+    mat4 projection;
+} ubo;
 
 uniform vec4 fragColor;
 
-varying vec4 vfragColor;
-varying vec2 vTextureCoord;
+out vec4 vfragColor;
+out vec2 vTextureCoord;
 
 void main() {
-    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+    gl_Position = ubo.projection * ubo.modelView * aVertexPosition;
 
     vfragColor = fragColor;
     vTextureCoord = aTextureCoord;

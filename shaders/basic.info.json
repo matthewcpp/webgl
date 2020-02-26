@@ -1,0 +1,20 @@
+{
+  "attributes": ["aVertexPosition", "aTextureCoord"],
+  "uniforms": ["fragColor", "uSampler"],
+  "uniformBufferSize": 128,
+  "uniformBlocks": [
+    {
+      "name": "UniformBuffer",
+      "members": [
+         {
+          "name": "modelView",
+          "type": "mat4"
+        },
+        {
+          "name": "projection",
+          "type": "mat4"
+        }
+      ]
+    }
+  ]
+}
