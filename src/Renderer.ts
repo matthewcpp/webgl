@@ -23,9 +23,13 @@ export class Renderer {
 
     public activateMaterial(material: Material) {
         this._material = material;
-        this.gl.useProgram(this._material.shader.program);
 
-        this.gl.uniformMatrix4fv(material.shader.uniforms.get("uProjectionMatrix"), false, this._camera.projectionMatrix);
+        this.gl.useProgram(this._material.shader.program);
+        this._material.shader.bindUniformBlocks(this.gl);
+
+        const ubo = material.shader.uniformBlocks.get("UniformBuffer");
+        let projectionMatrix = ubo.members.get("projection");
+        mat4.copy(projectionMatrix, this._camera.projectionMatrix);
 
         material.vec4.forEach((value: vec4, key: string) => {
             this.gl.uniform4fv(material.shader.uniforms.get(key), value);
@@ -43,7 +47,11 @@ export class Renderer {
         let modelView = mat4.create();
         mat4.multiply(modelView, this._camera.viewMatrix, transform.matrix);
 
-        this.gl.uniformMatrix4fv(this._material.shader.uniforms.get("uModelViewMatrix"), false, modelView);
+        const ubo = this._material.shader.uniformBlocks.get("UniformBuffer");
+        let modelViewMatrix = ubo.members.get("modelView");
+        mat4.copy(modelViewMatrix, modelView);
+
+        this._material.shader.updateUniformBuffer(this.gl);
 
         const vertexPosition = this._material.shader.attributes.get("aVertexPosition");
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, meshBuffer.vertexBuffer);

@@ -1,5 +1,5 @@
 import {WebGl} from "./WebGL.js";
-import {MeshBuffer, MeshBufferData, MeshInfo} from "./Mesh.js";
+import {MeshBuffer} from "./Mesh.js";
 import {Renderer} from "./Renderer.js";
 import {Camera} from "./Camera.js";
 import {Transform} from "./Transform.js";
@@ -28,9 +28,9 @@ window.onload = async () => {
         const material = await downalodMaterial("/assets/basic.material.json", webGl);
         const meshBuffer = webGl.createMeshBuffer("mesh", await downloadModel("/assets/chalet.model"));
 
-        const transform = new Transform();
-        quat.fromEuler(transform.rotation, rotationAngles[0], rotationAngles[1], rotationAngles[2]);
-        transform.updateMatrix();
+        const meshTransform = new Transform();
+        quat.fromEuler(meshTransform.rotation, rotationAngles[0], rotationAngles[1], rotationAngles[2]);
+        meshTransform.updateMatrix();
 
         camera = new Camera();
         setCameraPos(camera, meshBuffer);
@@ -47,12 +47,12 @@ window.onload = async () => {
             if (rotationAngles[1] >= 360.0)
                 rotationAngles[1] -= 360.0;
 
-            quat.fromEuler(transform.rotation, rotationAngles[0], rotationAngles[1], rotationAngles[2]);
-            transform.updateMatrix();
+            quat.fromEuler(meshTransform.rotation, rotationAngles[0], rotationAngles[1], rotationAngles[2]);
+            meshTransform.updateMatrix();
 
             renderer.setCamera(camera);
             renderer.activateMaterial(material);
-            renderer.drawMeshBuffer(meshBuffer, transform);
+            renderer.drawMeshBuffer(meshBuffer, meshTransform);
         };
 
         webGl.start();

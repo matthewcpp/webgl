@@ -23,7 +23,7 @@ export async function downloadShader(shaderBasePath: string) {
     const shaderFiles = await Promise.all([
         jQuery.ajax(`${shaderBasePath}.vert.glsl`),
         jQuery.ajax(`${shaderBasePath}.frag.glsl`),
-        jQuery.ajax(`${shaderBasePath}.shader.json`)
+        jQuery.ajax(`${shaderBasePath}.info.json`)
     ]);
 
     const shaderData = new ShaderData();
