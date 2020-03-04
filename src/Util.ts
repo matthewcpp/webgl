@@ -20,10 +20,12 @@ export function downloadImage(url: string): Promise<HTMLImageElement> {
 }
 
 export async function downloadShader(shaderBasePath: string) {
+    const timestamp = new Date().getTime();
+
     const shaderFiles = await Promise.all([
-        jQuery.ajax(`${shaderBasePath}.vert.glsl`),
-        jQuery.ajax(`${shaderBasePath}.frag.glsl`),
-        jQuery.ajax(`${shaderBasePath}.info.json`)
+        jQuery.ajax(`${shaderBasePath}.vert.glsl?timestamp=${timestamp}`),
+        jQuery.ajax(`${shaderBasePath}.frag.glsl?timestamp=${timestamp}`),
+        jQuery.ajax(`${shaderBasePath}.info.json?timestamp=${timestamp}`)
     ]);
 
     const shaderData = new ShaderData();
