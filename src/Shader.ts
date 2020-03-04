@@ -76,9 +76,12 @@ export class Shader {
         }
     }
 
+    private static readonly shaderDefsKey = "//!DEFINES";
+    private static readonly shaderDefs = "#define WEBGL2\n";
+
     private static compileShader(gl:WebGL2RenderingContext, vertexSource: string, fragmentSource: string) {
         const vertexShader = gl.createShader(gl.VERTEX_SHADER);
-        gl.shaderSource(vertexShader, vertexSource);
+        gl.shaderSource(vertexShader, vertexSource.replace(Shader.shaderDefsKey, Shader.shaderDefs));
         gl.compileShader(vertexShader);
 
         if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
@@ -89,7 +92,7 @@ export class Shader {
         }
 
         const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-        gl.shaderSource(fragmentShader, fragmentSource);
+        gl.shaderSource(fragmentShader, fragmentSource.replace(Shader.shaderDefsKey, Shader.shaderDefs));
         gl.compileShader(fragmentShader);
 
         if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {

@@ -1,7 +1,9 @@
 #version 300 es
 
-in vec4 aVertexPosition;
-in vec2 aTextureCoord;
+//!DEFINES
+
+layout(location = 0) in vec4 aVertexPosition;
+layout(location = 2) in vec2 aTextureCoord;
 
 layout(std140) uniform UniformBuffer {
     mat4 modelView;

@@ -1,5 +1,7 @@
 #version 300 es
 
+//!DEFINES
+
 precision mediump float;
 
 in vec4 vfragColor;
