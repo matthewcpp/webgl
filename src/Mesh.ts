@@ -83,6 +83,44 @@ export class MeshBufferData {
         return new MeshBufferData(vertexAttributes, bufferData, vertexCount, elementBuffer, meshData.triangles.length, min, max);
     }
 
+    static createFromArrayBuffer(arrayBuffer: ArrayBuffer){
+        const dataView = new DataView(arrayBuffer);
+
+        let dataIndex = 0;
+        const vertexAttributes = dataView.getUint32(dataIndex, true) as MeshVertexAttributes;
+        dataIndex += 4;
+
+        const vertexCount = dataView.getUint32(dataIndex, true);
+        dataIndex += 4;
+
+        const vertexBufferSize = dataView.getUint32(dataIndex, true);
+        dataIndex += 4;
+
+        const vertexBuffer = new Float32Array(arrayBuffer, dataIndex, vertexBufferSize / 4);
+        dataIndex += (vertexBufferSize);
+
+        const elementCount = dataView.getUint32(dataIndex, true);
+        dataIndex += 4;
+
+        const elementSize = dataView.getUint32(dataIndex, true);
+        dataIndex += 4;
+
+        // not currently used
+        // const elementDataSize = dataView.getUint32(dataIndex, true);
+        dataIndex += 4;
+
+        const elementBuffer = (elementSize === 2) ? new Uint16Array(arrayBuffer, dataIndex, elementCount) : new Uint32Array(arrayBuffer, dataIndex, elementCount);
+        dataIndex += elementCount * elementSize;
+
+        const min = vec3.fromValues(dataView.getFloat32(dataIndex, true), dataView.getFloat32(dataIndex + 4, true), dataView.getFloat32(dataIndex + 8, true));
+        dataIndex += 12;
+
+        const max = vec3.fromValues(dataView.getFloat32(dataIndex, true), dataView.getFloat32(dataIndex + 4, true), dataView.getFloat32(dataIndex + 8, true));
+        dataIndex += 12;
+
+        return new MeshBufferData(vertexAttributes, vertexBuffer, vertexCount, elementBuffer, elementCount, min, max);
+    }
+
     private static _validateMeshInfo(meshData: MeshInfo) {
         if (meshData.positions.length > 0 && meshData.positions.length % 3 != 0) {
             throw new Error(`Error creating MeshBuffer: positions must be evenly divisible by three.`)

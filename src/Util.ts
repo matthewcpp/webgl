@@ -57,42 +57,7 @@ function downloadArrayBuffer(url: string) {
 
 export async function downloadModel(url: string) {
     const modelData = await downloadArrayBuffer(url);
-
-    const dataView = new DataView(modelData);
-
-    let dataIndex = 0;
-    const vertexAttributes = dataView.getUint32(dataIndex, true) as MeshVertexAttributes;
-    dataIndex += 4;
-
-    const vertexCount = dataView.getUint32(dataIndex, true);
-    dataIndex += 4;
-
-    const vertexBufferSize = dataView.getUint32(dataIndex, true);
-    dataIndex += 4;
-
-    const vertexBuffer = new Float32Array(modelData, dataIndex, vertexBufferSize / 4);
-    dataIndex += (vertexBufferSize);
-
-    const elementCount = dataView.getUint32(dataIndex, true);
-    dataIndex += 4;
-
-    const elementSize = dataView.getUint32(dataIndex, true);
-    dataIndex += 4;
-
-    // not currently used
-    // const elementDataSize = dataView.getUint32(dataIndex, true);
-    dataIndex += 4;
-
-    const elementBuffer = (elementSize === 2) ? new Uint16Array(modelData, dataIndex, elementCount) : new Uint32Array(modelData, dataIndex, elementCount);
-    dataIndex += elementCount * elementSize;
-
-    const min = vec3.fromValues(dataView.getFloat32(dataIndex, true), dataView.getFloat32(dataIndex + 4, true), dataView.getFloat32(dataIndex + 8, true));
-    dataIndex += 12;
-
-    const max = vec3.fromValues(dataView.getFloat32(dataIndex, true), dataView.getFloat32(dataIndex + 4, true), dataView.getFloat32(dataIndex + 8, true));
-    dataIndex += 12;
-
-    return new MeshBufferData(vertexAttributes, vertexBuffer, vertexCount, elementBuffer, elementCount, min, max);
+    return MeshBufferData.createFromArrayBuffer(modelData);
 }
 
 export async function downalodMaterial(url: string, webgl: WebGl) {

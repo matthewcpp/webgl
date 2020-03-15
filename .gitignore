@@ -1,5 +1,6 @@
 node_modules
 lib
 external
+assets
 .idea
 .DS_Store
