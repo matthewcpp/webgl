@@ -4,7 +4,7 @@
   "uniformBufferSize": 128,
   "uniformBlocks": [
     {
-      "name": "UniformBuffer",
+      "name": "Camera",
       "members": [
          {
           "name": "modelView",

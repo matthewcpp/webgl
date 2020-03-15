@@ -1,9 +1,7 @@
 import {ShaderData, ShaderInfo} from "./Shader.js";
 import {Material, MaterialInfo} from "./Material.js";
 import {WebGl} from "./WebGL.js";
-import {MeshBufferData, MeshVertexAttributes} from "./Mesh.js";
-
-import * as vec3 from "../external/gl-matrix/vec3.js"
+import {MeshBufferData} from "./Mesh.js";
 
 import "../external/jquery.min.js";
 

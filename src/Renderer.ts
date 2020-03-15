@@ -27,7 +27,7 @@ export class Renderer {
         this.gl.useProgram(this._material.shader.program);
         this._material.shader.bindUniformBlocks(this.gl);
 
-        const ubo = material.shader.uniformBlocks.get("UniformBuffer");
+        const ubo = material.shader.uniformBlocks.get("Camera");
         let projectionMatrix = ubo.members.get("projection");
         mat4.copy(projectionMatrix, this._camera.projectionMatrix);
 
@@ -47,7 +47,7 @@ export class Renderer {
         let modelView = mat4.create();
         mat4.multiply(modelView, this._camera.viewMatrix, transform.matrix);
 
-        const ubo = this._material.shader.uniformBlocks.get("UniformBuffer");
+        const ubo = this._material.shader.uniformBlocks.get("Camera");
         let modelViewMatrix = ubo.members.get("modelView");
         mat4.copy(modelViewMatrix, modelView);
 
