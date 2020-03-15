@@ -125,22 +125,19 @@ export class MeshBuffer {
         return (this.vertexAttributes & attribute) == attribute;
     }
 
-    public getOffsetForAttribute(attribute: MeshVertexAttributes) {
-        switch (attribute) {
-            case MeshVertexAttributes.Positions:
-                return 0;
-            case MeshVertexAttributes.Normals:
-                return this.vertexCount * 3 * 4;
+    getVertexSize(): number {
+        let vertexSize = 0;
 
-            case MeshVertexAttributes.TexCoords: {
-                let offset = this.vertexCount * 3;
-                if (this.hasVertexAttribute(MeshVertexAttributes.Normals)) {
-                    offset *= 2;
-                }
+        if (this.vertexAttributes & MeshVertexAttributes.Positions)
+            vertexSize += 12;
 
-                return offset * 4;
-            }
-        }
+        if (this.vertexAttributes & MeshVertexAttributes.Normals)
+            vertexSize += 12;
+
+        if (this.vertexAttributes & MeshVertexAttributes.TexCoords)
+            vertexSize += 8;
+
+        return vertexSize;
     }
 
     public static create(gl:WebGL2RenderingContext, meshBufferData: MeshBufferData): MeshBuffer {

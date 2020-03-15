@@ -96,7 +96,9 @@ export async function downloadModel(url: string) {
 }
 
 export async function downalodMaterial(url: string, webgl: WebGl) {
-    const materialInfo = await jQuery.ajax(url) as MaterialInfo;
+    const timestamp = new Date().getTime();
+
+    const materialInfo = await jQuery.ajax(`${url}?timestamp=${timestamp}`) as MaterialInfo;
 
     let shader = webgl.shaders.get(materialInfo.shader);
     if (!shader) {
@@ -112,16 +114,16 @@ export async function downalodMaterial(url: string, webgl: WebGl) {
         material.vec4.set(vec4f, values);
     }
 
-    const textures = Object.keys(materialInfo.texture);
-    for (const texture of textures) {
-        const textureName = materialInfo.texture[texture];
+    const samplers = Object.keys(materialInfo.sampler2D);
+    for (const sampler of samplers) {
+        const textureHandle = materialInfo.sampler2D[sampler];
 
-        let webglTexture = webgl.textures.get(textureName);
+        let webglTexture = webgl.textures.get(textureHandle);
         if (!webglTexture) {
-            webglTexture = webgl.createTexture(texture, await downloadImage(textureName));
+            webglTexture = webgl.createTexture(textureHandle, await downloadImage(textureHandle));
         }
 
-        material.texture.set(texture, webglTexture);
+        material.sampler2D.set(sampler, webglTexture);
     }
 
     return material;

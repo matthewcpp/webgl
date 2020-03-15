@@ -8,7 +8,7 @@ import * as mat4 from "../external/gl-matrix/mat4.js";
 
 
 export class Renderer {
-    private gl: WebGL2RenderingContext;
+    private readonly gl: WebGL2RenderingContext;
 
     private _camera: Camera = null;
     private _material: Material = null;
@@ -35,7 +35,7 @@ export class Renderer {
             this.gl.uniform4fv(material.shader.uniforms.get(key), value);
         });
 
-        material.texture.forEach((value: WebGLTexture, key: string) => {
+        material.sampler2D.forEach((value: WebGLTexture, key: string) => {
             this.gl.activeTexture(this.gl.TEXTURE0); // TODO: fixme
             this.gl.bindTexture(this.gl.TEXTURE_2D, value);
             const samplerLocation = material.shader.uniforms.get(key);
@@ -53,14 +53,25 @@ export class Renderer {
 
         this._material.shader.updateUniformBuffer(this.gl);
 
+        const vertexSize = meshBuffer.getVertexSize();
+        let offset = 0;
+
         const vertexPosition = this._material.shader.attributes.get("aVertexPosition");
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, meshBuffer.vertexBuffer);
-        this.gl.vertexAttribPointer(vertexPosition, 3, this.gl.FLOAT, false, 0, 0);
+        this.gl.vertexAttribPointer(vertexPosition, 3, this.gl.FLOAT, false, vertexSize, 0);
         this.gl.enableVertexAttribArray(vertexPosition);
+        offset += 12;
+
+        if (meshBuffer.hasVertexAttribute(MeshVertexAttributes.Normals)) {
+            const normalPosition = this._material.shader.attributes.get("aVertexNormal");
+            this.gl.vertexAttribPointer(normalPosition, 3, this.gl.FLOAT, false, vertexSize, offset);
+            this.gl.enableVertexAttribArray(normalPosition);
+            offset += 12;
+        }
 
         if (meshBuffer.hasVertexAttribute(MeshVertexAttributes.TexCoords)) {
             const textCordPosition = this._material.shader.attributes.get("aTextureCoord");
-            this.gl.vertexAttribPointer(textCordPosition, 2, this.gl.FLOAT, false, 0, meshBuffer.getOffsetForAttribute(MeshVertexAttributes.TexCoords));
+            this.gl.vertexAttribPointer(textCordPosition, 2, this.gl.FLOAT, false, vertexSize, offset);
             this.gl.enableVertexAttribArray(textCordPosition);
         }
 
