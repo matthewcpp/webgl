@@ -3,8 +3,6 @@ import {Material, MaterialInfo} from "./Material.js";
 import {WebGl} from "./WebGL.js";
 import {MeshBufferData} from "./Mesh.js";
 
-import "../external/jquery.min.js";
-
 export function downloadImage(url: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         let image = new Image();
@@ -21,47 +19,33 @@ export async function downloadShader(shaderBasePath: string) {
     const timestamp = new Date().getTime();
 
     const shaderFiles = await Promise.all([
-        jQuery.ajax(`${shaderBasePath}.vert.glsl?timestamp=${timestamp}`),
-        jQuery.ajax(`${shaderBasePath}.frag.glsl?timestamp=${timestamp}`),
-        jQuery.ajax(`${shaderBasePath}.info.json?timestamp=${timestamp}`)
+        fetch(`${shaderBasePath}.vert.glsl?timestamp=${timestamp}`),
+        fetch(`${shaderBasePath}.frag.glsl?timestamp=${timestamp}`),
+        fetch(`${shaderBasePath}.info.json?timestamp=${timestamp}`)
     ]);
 
     const shaderData = new ShaderData();
-    shaderData.vertexSource = shaderFiles[0];
-    shaderData.fragmentSource = shaderFiles[1];
-    shaderData.info = shaderFiles[2] as ShaderInfo;
+    shaderData.vertexSource = await shaderFiles[0].text();
+    shaderData.fragmentSource = await shaderFiles[1].text();
+    shaderData.info = await shaderFiles[2].json() as ShaderInfo;
 
     return shaderData;
 }
 
-function downloadArrayBuffer(url: string) {
-    return new Promise<ArrayBuffer>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-
-        xhr.open("GET", url);
-        xhr.responseType = "arraybuffer";
-        xhr.onload = () => {
-            if (xhr.status === 200) {
-                resolve(xhr.response as ArrayBuffer);
-            }
-            else {
-                reject(`Error loading: ${url}.  Response code: ${xhr.status}`);
-            }
-        };
-
-        xhr.send();
-    });
-}
-
 export async function downloadModel(url: string) {
-    const modelData = await downloadArrayBuffer(url);
+    const modelResponse = await fetch(url);
+    if (modelResponse.status !== 200)
+        throw new Error(`Unable to download model from: ${url}`);
+
+    const modelData = await modelResponse.arrayBuffer();
     return MeshBufferData.createFromArrayBuffer(modelData);
 }
 
 export async function downalodMaterial(url: string, webgl: WebGl) {
     const timestamp = new Date().getTime();
 
-    const materialInfo = await jQuery.ajax(`${url}?timestamp=${timestamp}`) as MaterialInfo;
+    const materialResponse = await fetch(`${url}?timestamp=${timestamp}`);
+    const materialInfo = await materialResponse.json() as MaterialInfo;
 
     let shader = webgl.shaders.get(materialInfo.shader);
     if (!shader) {
