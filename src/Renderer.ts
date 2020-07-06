@@ -29,8 +29,7 @@ export class Renderer {
 
     public setCamera(camera: Camera) {
         this._camera = camera;
-        this._camera.updateProjectionMatrix();
-        this._camera.updateViewMatrix();
+        this._camera.aspect = this.gl.canvas.width / this.gl.canvas.height;
 
         // set the standard shader data in the local buffer
         const view = new Float32Array(this._wglUnifromBlockData);
