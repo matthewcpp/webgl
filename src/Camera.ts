@@ -13,10 +13,8 @@ export class Camera {
     public viewMatrix: mat4 = mat4.create();
 
     constructor(
-        public readonly node
-    ) {
-        this.updateProjectionMatrix();
-    }
+        public readonly node: Node
+    ) {}
 
     public updateProjectionMatrix() {
         mat4.perspective(this.projectionMatrix,
@@ -27,11 +25,11 @@ export class Camera {
     }
 
     public updateViewMatrix() {
-        let target = this.node.transform.forward();
-        vec3.add(target, this.node.transform.position, target);
+        let target = this.node.forward();
+        vec3.add(target, this.node.position, target);
 
-        let up = this.node.transform.up();
+        let up = this.node.up();
 
-        mat4.lookAt(this.viewMatrix, this.node.transform.position, target, up);
+        mat4.lookAt(this.viewMatrix, this.node.position, target, up);
     }
 }

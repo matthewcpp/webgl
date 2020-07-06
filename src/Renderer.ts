@@ -43,11 +43,11 @@ export class Renderer {
     }
 
     public drawScene(node: Node) {
-        for (let i = 0; i < node.transform.getChildCount(); i++) {
-            const child = node.transform.getChild(i);
+        for (let i = 0; i < node.getChildCount(); i++) {
+            const child = node.getChild(i);
 
-            if (child.node.components.mesh && child.node.components.material)
-                this._drawNode(child.node);
+            if (child.components.mesh && child.components.material)
+                this._drawNode(child);
         }
     }
 
@@ -58,7 +58,7 @@ export class Renderer {
 
         // update the per object standard shader values
         // mat4.multiply(this._wglMvpMatrixBuffer, this._camera.viewMatrix, node.transform.localMatrix);
-        mat4.copy(this._wglMvpMatrixBuffer, node.transform.localMatrix);
+        mat4.copy(this._wglMvpMatrixBuffer, node.localMatrix);
 
         // send the default data to the newly active shader
         this.gl.uniformBlockBinding(shader.program, shader.blockIndex, 0);

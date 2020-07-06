@@ -112,11 +112,11 @@ export class WebGl {
 
     private _createDefaultCamera() {
         const cameraNode = new Node("Main Camera");
-        vec3.set(cameraNode.transform.position, 0.0, 7.0, 10.0);
-        cameraNode.transform.updateMatrix();
-        cameraNode.transform.lookAt([0.0, 1.0, 0.0]);
+        vec3.set(cameraNode.position, 0.0, 7.0, 10.0);
+        cameraNode.updateMatrix();
+        cameraNode.lookAt([0.0, 1.0, 0.0]);
         cameraNode.components.camera = new Camera(cameraNode);
         this.mainCamera = cameraNode.components.camera;
-        this.rootNode.transform.addChild(cameraNode.transform);
+        this.rootNode.addChild(cameraNode);
     }
 }

@@ -1,7 +1,6 @@
 import {WebGl} from "../WebGL.js";
 import * as GLTF from "./Schema.js";
 import {Node} from "../Node.js";
-import {Transform} from "../Transform.js";
 import {Attribute, ElementBuffer, Mesh, Primitive} from "../Mesh.js";
 import {Material} from "../Material.js";
 import {DefaultAttributeLocations} from "../Shader.js";
@@ -53,7 +52,7 @@ export class Loader {
     }
 
     private async _loadScene(scene: GLTF.Scene) {
-        Transform.freeze = true;
+        Node.freeze = true;
         let webglNodes: Node[] = new Array(this._gltf.nodes.length);
 
         // create all the nodes
@@ -73,12 +72,12 @@ export class Loader {
 
         // set the root nodes
         for(const rootNode of scene.nodes) {
-            this._webgl.rootNode.transform.addChild(webglNodes[rootNode].transform);
+            this._webgl.rootNode.addChild(webglNodes[rootNode]);
         }
 
         // update all matrices
-        Transform.freeze = false;
-        this._webgl.rootNode.transform.updateMatrix();
+        Node.freeze = false;
+        this._webgl.rootNode.updateMatrix();
 
         return scene.nodes.map((index: number) => { return webglNodes[index]});
     }
