@@ -23,6 +23,39 @@ export class UnlitShader implements ShaderInterface{
 
     public push(program: WebGLProgram, gl: WebGL2RenderingContext, params: any) {
         const unlitParams = params as UnlitParams;
-        gl.uniform4f(this._fragColor, unlitParams.color[0], unlitParams.color[1], unlitParams.color[2], unlitParams.color[3]);
+        gl.uniform4fv(this._fragColor, unlitParams.color);
+    }
+}
+
+export class UnlitTexturedParams {
+    public color: vec4 = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+    public texture: WebGLTexture = null;
+}
+
+export class UnlitTexturedShader implements ShaderInterface{
+    private _fragColor: WebGLUniformLocation;
+    private _sampler0: WebGLUniformLocation;
+    private static _vertexAttributes = [0, 2];
+
+    public init(program: WebGLProgram, gl: WebGL2RenderingContext) {
+        this._fragColor = gl.getUniformLocation(program, "frag_color");
+        this._sampler0 = gl.getUniformLocation(program, "sampler0");
+
+        if (this._fragColor == null || this._sampler0 == null) {
+            throw new Error("Unable to get uniform location for frag_color in unlit shader.")
+        }
+    }
+
+    public attributes() : Array<number> {
+        return UnlitTexturedShader._vertexAttributes;
+    }
+
+    public push(program: WebGLProgram, gl: WebGL2RenderingContext, params: any) {
+        const unlitParams = params as UnlitTexturedParams;
+        gl.uniform4fv(this._fragColor, unlitParams.color);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, unlitParams.texture);
+        gl.uniform1i(this._sampler0, 0);
     }
 }

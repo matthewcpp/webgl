@@ -3,7 +3,7 @@ import {Renderer} from "./Renderer.js";
 import {Texture} from "./Texture.js"
 import {Node} from "./Node.js";
 import {Camera} from "./Camera.js";
-import {Shader, ShaderData2} from "./Shader.js";
+import {Shader, ShaderData} from "./Shader.js";
 import {DefaultShaders} from "./shader/DefaultShaders.js";
 
 import * as glMatrix from "../external/gl-matrix/common.js";
@@ -77,7 +77,7 @@ export class WebGl {
         this.canvas.height = this.canvas.clientHeight;
     }
 
-    public createShader(name: string, shaderData: ShaderData2): Shader {
+    public createShader(name: string, shaderData: ShaderData): Shader {
         if (this.shaders.has(name)) {
             throw new Error(`Shader with name: ${name} already exists.`);
         }
@@ -112,9 +112,9 @@ export class WebGl {
 
     private _createDefaultCamera() {
         const cameraNode = new Node("Main Camera");
-        vec3.set(cameraNode.transform.position, 0.0, 1.0, 10.0);
+        vec3.set(cameraNode.transform.position, 0.0, 7.0, 10.0);
         cameraNode.transform.updateMatrix();
-        cameraNode.transform.lookAt([0.0, 1.0, -1.0]);
+        cameraNode.transform.lookAt([0.0, 1.0, 0.0]);
         cameraNode.components.camera = new Camera(cameraNode);
         this.mainCamera = cameraNode.components.camera;
         this.rootNode.transform.addChild(cameraNode.transform);

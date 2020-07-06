@@ -27,26 +27,38 @@ export enum GLTFPrimitiveMode{
     TriangleFan = 6
 }
 
+export interface GLTFPbrMetallicRoughness {
+    baseColorTexture: {
+        index: number;
+    }
+}
+
+export interface GLTFMaterial {
+    name: string;
+    pbrMetallicRoughness: GLTFPbrMetallicRoughness;
+}
+
 export interface GLTFPrimitive
 {
     attributes: {[key: string]: number};
     mode: GLTFPrimitiveMode;
     indices: number;
+    material?: number;
 }
 
 export interface GLTFMesh {
     name?: string;
-    primitives: GLTFPrimitive[],
+    primitives: GLTFPrimitive[];
 }
 
 export interface GLTFAccessor {
-    bufferView: number,
-        byteOffset: number,
-        componentType: GLTFComponentType,
-        count: number,
-        type: string,
-        max: number[],
-        min: number[],
+    bufferView: number;
+    byteOffset: number;
+    componentType: GLTFComponentType;
+    count: number;
+    type: string;
+    max: number[];
+    min: number[];
 }
 
 export enum GlTFBufferViewTarget {
@@ -55,20 +67,24 @@ export enum GlTFBufferViewTarget {
 }
 
 export interface GLTFBufferView {
-    buffer: number,
-    byteOffset: number,
-    byteLength: number,
-    byteStride?: number,
-    target: GlTFBufferViewTarget,
+    buffer: number;
+    byteOffset: number;
+    byteLength: number;
+    byteStride?: number;
+    target: GlTFBufferViewTarget;
 }
 
 export interface GLTFBuffer {
-    uri: string,
-    byteLength: number,
+    uri: string;
+    byteLength: number;
 }
 
 export interface GLTFAsset {
-    version: string,
+    version: string;
+}
+
+export interface GLTFImage {
+    uri: string;
 }
 
 export interface GLTFSchema {
@@ -79,5 +95,7 @@ export interface GLTFSchema {
     buffers?: GLTFBuffer[];
     bufferViews?: GLTFBufferView[];
     accessors?: GLTFAccessor[];
+    images?: GLTFImage[];
+    materials?: GLTFMaterial[]
     asset: GLTFAsset;
 }

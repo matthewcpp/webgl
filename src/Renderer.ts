@@ -64,7 +64,7 @@ export class Renderer {
         this.gl.uniformBlockBinding(shader.program, shader.blockIndex, 0);
         this.gl.uniformMatrix4fv(shader.mvpLocation, false, this._wglMvpMatrixBuffer);
 
-        shader.shaderInterface.init(shader.program, this.gl);
+        shader.shaderInterface.push(shader.program, this.gl, material.params);
 
         const mesh = node.components.mesh;
 

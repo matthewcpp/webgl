@@ -1,6 +1,3 @@
-import {Material} from "./Material";
-import * as vec4 from "../external/gl-matrix/vec4.js";
-
 export interface ShaderInterface {
     // called after the shader has been successfully compiled
     init(program: WebGLProgram, gl: WebGL2RenderingContext);
@@ -12,15 +9,14 @@ export interface ShaderInterface {
     push(program: WebGLProgram, gl: WebGL2RenderingContext, params: any)
 }
 
-export interface ShaderParams {
-    clone(): ShaderParams;
-}
-
 export enum DefaultAttributeLocations {
-    Position = 0
+    Position = 0,
+    Normal = 1,
+    TexCoord0
 }
 
-export class ShaderData2 {
+export class ShaderData {
+    public preprocessorDefines = new Array<string>();
     public vertexSource: string;
     public fragmentSource: string;
     public shaderInterface: ShaderInterface;
@@ -36,23 +32,30 @@ export class Shader {
         public readonly createParams: () => any
     ){}
 
-    public static create(shaderData: ShaderData2, gl: WebGL2RenderingContext) {
-        const program = Shader._compileShader(shaderData.vertexSource, shaderData.fragmentSource, gl);
+    public static create(shaderData: ShaderData, gl: WebGL2RenderingContext) {
+        const program = Shader._compileShader(shaderData.vertexSource, shaderData.fragmentSource, shaderData.preprocessorDefines, gl);
 
         const wglDataIndex = gl.getUniformBlockIndex(program, 'wglData');
+        const wglMvpLocation = gl.getUniformLocation(program, "wgl_mvp");
 
         if (wglDataIndex == -1)
             throw new Error(`Unable to find wglData uniform block`);
-
-        const wglMvpLocation = gl.getUniformLocation(program, "wgl_mvp");
-
         if (wglMvpLocation == null)
             throw new Error(`Unable to find wgl_mvp uniform`);
+
+        shaderData.shaderInterface.init(program, gl);
 
         return new Shader(program, wglDataIndex, wglMvpLocation, shaderData.shaderInterface, shaderData.createParams);
     }
 
-    private static _compileShader(vertexSource: string, fragmentSource: string, gl: WebGL2RenderingContext) {
+    private static _shaderDefineStr = "//!WGL_DEFINES";
+    private static _compileShader(vertexSource: string, fragmentSource: string, preprocessorDefines: string[], gl: WebGL2RenderingContext) {
+        if (preprocessorDefines.length > 0) {
+            const preprocessorDefinitions = preprocessorDefines.join("\n");
+            vertexSource = vertexSource.replace(Shader._shaderDefineStr, preprocessorDefinitions);
+            fragmentSource = fragmentSource.replace(Shader._shaderDefineStr, preprocessorDefinitions);
+        }
+
         const vertexShader = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vertexShader, vertexSource);
         gl.compileShader(vertexShader);

@@ -1,4 +1,4 @@
-import {ShaderData2} from "./Shader.js";
+import {ShaderData} from "./Shader.js";
 
 export function downloadImage(url: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
@@ -25,7 +25,7 @@ export async function downloadShaderSource(shaderBasePath: string) {
         shaderFiles[1].text()
     ]);
 
-    const shaderData = new ShaderData2();
+    const shaderData = new ShaderData();
     shaderData.vertexSource = shaderSource[0];
     shaderData.fragmentSource = shaderSource[1];
 
