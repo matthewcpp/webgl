@@ -1,3 +1,5 @@
+import {Bounds} from "./Bounds.js";
+
 export class Attribute {
     public constructor(
         public readonly index: number,
@@ -24,6 +26,7 @@ export class Primitive {
     type: number;
     indices: ElementBuffer = null;
     attributes = new Array<Attribute>();
+    bounds: Bounds;
 }
 
 export class Mesh {

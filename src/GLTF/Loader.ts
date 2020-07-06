@@ -6,6 +6,9 @@ import {Material} from "../Material.js";
 import {DefaultAttributeLocations} from "../Shader.js";
 import {downloadImage} from "../Util.js";
 import {UnlitTexturedParams} from "../shader/Unlit.js";
+import {Bounds} from "../Bounds.js";
+import * as vec3 from "../../external/gl-matrix/vec3.js";
+
 
 export class Loader {
     private _baseUrl: string;
@@ -99,6 +102,14 @@ export class Loader {
 
                 if (attribute !== null)
                     primitive.attributes.push(attribute);
+
+                // position accessor must specify min and max properties
+                if (attributeName == "POSITION") {
+                    const gltfAccessor = this._gltf.accessors[meshPrimitive.attributes[attributeName]];
+                    primitive.bounds = new Bounds();
+                    vec3.copy(primitive.bounds.min, gltfAccessor.min);
+                    vec3.copy(primitive.bounds.max, gltfAccessor.max);
+                }
             }
 
             primitive.indices = await this._getElementBuffer(meshPrimitive.indices);
