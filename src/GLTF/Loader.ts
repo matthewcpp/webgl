@@ -1,12 +1,5 @@
 import {WebGl} from "../WebGL.js";
-import {
-    GlTFBufferViewTarget,
-    GLTFComponentType,
-    GLTFPrimitive,
-    GLTFPrimitiveMode,
-    GLTFScene,
-    GLTFSchema
-} from "./Schema.js";
+import * as GLTF from "./Schema.js";
 import {Node} from "../Node.js";
 import {Transform} from "../Transform.js";
 import {Attribute, ElementBuffer, Mesh, Primitive} from "../Mesh.js";
@@ -15,9 +8,9 @@ import {DefaultAttributeLocations} from "../Shader.js";
 import {downloadImage} from "../Util.js";
 import {UnlitTexturedParams} from "../shader/Unlit.js";
 
-export class GLTFLoader {
+export class Loader {
     private _baseUrl: string;
-    private _schema: GLTFSchema = null;
+    private _gltf: GLTF.Schema = null;
     private _meshes: Mesh[] = null;
     private _arrayBuffers: ArrayBuffer[] = null;
     private _glBuffers: WebGLBuffer[] = null;
@@ -29,10 +22,10 @@ export class GLTFLoader {
     public constructor(
         private _webgl: WebGl)
     {
-        if (GLTFLoader.attributeLocations.size === 0) {
-            GLTFLoader.attributeLocations.set("POSITION", DefaultAttributeLocations.Position);
-            GLTFLoader.attributeLocations.set("NORMAL", DefaultAttributeLocations.Normal);
-            GLTFLoader.attributeLocations.set("TEXCOORD_0", DefaultAttributeLocations.TexCoord0);
+        if (Loader.attributeLocations.size === 0) {
+            Loader.attributeLocations.set("POSITION", DefaultAttributeLocations.Position);
+            Loader.attributeLocations.set("NORMAL", DefaultAttributeLocations.Normal);
+            Loader.attributeLocations.set("TEXCOORD_0", DefaultAttributeLocations.TexCoord0);
         }
     }
 
@@ -45,30 +38,30 @@ export class GLTFLoader {
         if (request.status != 200)
             throw new Error(`Unable to load gltf file at: ${url}`);
 
-        this._schema = JSON.parse(await request.text()) as GLTFSchema;
+        this._gltf = JSON.parse(await request.text()) as GLTF.Schema;
 
-        this._meshes = this._schema.meshes ? new Array<Mesh>(this._schema.meshes.length) : null;
-        this._arrayBuffers = this._schema.buffers ? new Array<ArrayBuffer>(this._schema.buffers.length) : null;
-        this._glBuffers = this._schema.bufferViews ? new Array<WebGLBuffer>(this._schema.bufferViews.length) : null;
-        this._textures = this._schema.images ? new Array<WebGLTexture>(this._schema.images.length) : null;
-        this._materials = this._schema.images ? new Array<Material>(this._schema.materials.length) : null;
+        this._meshes = this._gltf.meshes ? new Array<Mesh>(this._gltf.meshes.length) : null;
+        this._arrayBuffers = this._gltf.buffers ? new Array<ArrayBuffer>(this._gltf.buffers.length) : null;
+        this._glBuffers = this._gltf.bufferViews ? new Array<WebGLBuffer>(this._gltf.bufferViews.length) : null;
+        this._textures = this._gltf.images ? new Array<WebGLTexture>(this._gltf.images.length) : null;
+        this._materials = this._gltf.images ? new Array<Material>(this._gltf.materials.length) : null;
 
-        if (this._schema.scenes && this._schema.scenes.length > 0)
-            return await this._loadScene(this._schema.scenes[0]);
+        if (this._gltf.scenes && this._gltf.scenes.length > 0)
+            return await this._loadScene(this._gltf.scenes[0]);
         else
             return null;
     }
 
-    private async _loadScene(scene: GLTFScene) {
+    private async _loadScene(scene: GLTF.Scene) {
         Transform.freeze = true;
-        let webglNodes: Node[] = new Array(this._schema.nodes.length);
+        let webglNodes: Node[] = new Array(this._gltf.nodes.length);
 
         // create all the nodes
-        for (let i = 0; i < this._schema.nodes.length; i++) {
+        for (let i = 0; i < this._gltf.nodes.length; i++) {
             const node = new Node();
             webglNodes[i] = node;
 
-            const gltfNode = this._schema.nodes[i];
+            const gltfNode = this._gltf.nodes[i];
             if (gltfNode.name)
                 node.name = gltfNode.name;
 
@@ -94,7 +87,7 @@ export class GLTFLoader {
         if (this._meshes[index])
             return this._meshes[index];
 
-        const gltfMesh = this._schema.meshes[index];
+        const gltfMesh = this._gltf.meshes[index];
 
         const primitives = new Array<Primitive>();
         for (const meshPrimitive of gltfMesh.primitives) {
@@ -118,11 +111,11 @@ export class GLTFLoader {
         return this._webgl.createMesh(name, primitives);
     }
 
-    private getPrimitiveType(primitive: GLTFPrimitive) {
-        let mode = primitive.hasOwnProperty("mode") ? primitive.mode : GLTFPrimitiveMode.Triangles;
+    private getPrimitiveType(primitive: GLTF.Primitive) {
+        let mode = primitive.hasOwnProperty("mode") ? primitive.mode : GLTF.PrimitiveMode.Triangles;
 
         switch (mode) {
-            case GLTFPrimitiveMode.Triangles:
+            case GLTF.PrimitiveMode.Triangles:
                 return this._webgl.gl.TRIANGLES;
 
             default:
@@ -131,20 +124,20 @@ export class GLTFLoader {
     }
 
     private static _getAttributeIndex(gltfName: string){
-        if (GLTFLoader.attributeLocations.has(gltfName))
-            return GLTFLoader.attributeLocations.get(gltfName);
+        if (Loader.attributeLocations.has(gltfName))
+            return Loader.attributeLocations.get(gltfName);
         else{
             return -1;
         }
     }
 
-    private static _getComponentType(componentType: GLTFComponentType, gl: WebGL2RenderingContext) {
+    private static _getComponentType(componentType: GLTF.ComponentType, gl: WebGL2RenderingContext) {
         switch (componentType) {
-            case GLTFComponentType.Float:
+            case GLTF.ComponentType.Float:
                 return gl.FLOAT;
-            case GLTFComponentType.UnsignedShort:
+            case GLTF.ComponentType.UnsignedShort:
                 return gl.UNSIGNED_SHORT;
-            case GLTFComponentType.UnsignedInt:
+            case GLTF.ComponentType.UnsignedInt:
                 return gl.UNSIGNED_INT;
 
             default:
@@ -175,9 +168,9 @@ export class GLTFLoader {
     }
 
     private async _getAttribute(gltfName: string, index: number) {
-        const accessor = this._schema.accessors[index];
-        const bufferView = this._schema.bufferViews[accessor.bufferView];
-        const attributeIndex = GLTFLoader._getAttributeIndex(gltfName);
+        const accessor = this._gltf.accessors[index];
+        const bufferView = this._gltf.bufferViews[accessor.bufferView];
+        const attributeIndex = Loader._getAttributeIndex(gltfName);
 
         if (attributeIndex == -1) {
             return null;
@@ -185,8 +178,8 @@ export class GLTFLoader {
 
         return new Attribute(
             attributeIndex,
-            GLTFLoader._getComponentType(accessor.componentType, this._webgl.gl),
-            GLTFLoader._getComponentElementCount(accessor.type),
+            Loader._getComponentType(accessor.componentType, this._webgl.gl),
+            Loader._getComponentElementCount(accessor.type),
             accessor.count,
             accessor.byteOffset,
             bufferView.byteStride ? bufferView.byteStride : 0,
@@ -195,10 +188,10 @@ export class GLTFLoader {
     }
 
     private async _getElementBuffer(index) {
-        const accessor = this._schema.accessors[index];
+        const accessor = this._gltf.accessors[index];
 
         return new ElementBuffer(
-            GLTFLoader._getComponentType(accessor.componentType, this._webgl.gl),
+            Loader._getComponentType(accessor.componentType, this._webgl.gl),
             accessor.count,
             accessor.byteOffset,
             await this._getBufferView(accessor.bufferView)
@@ -207,12 +200,12 @@ export class GLTFLoader {
 
     private async _getBufferView(index: number) {
         if (!this._glBuffers[index]) {
-            const bufferView = this._schema.bufferViews[index];
+            const bufferView = this._gltf.bufferViews[index];
             const arrayBuffer = await this._getBuffer(bufferView.buffer);
             const typedArray = new Uint8Array(arrayBuffer, bufferView.byteOffset, bufferView.byteLength);
 
             const gl = this._webgl.gl;
-            const target = bufferView.target === GlTFBufferViewTarget.ArrayBuffer ? gl.ARRAY_BUFFER : gl.ELEMENT_ARRAY_BUFFER;
+            const target = bufferView.target === GLTF.BufferViewTarget.ArrayBuffer ? gl.ARRAY_BUFFER : gl.ELEMENT_ARRAY_BUFFER;
             const glBuffer = gl.createBuffer();
             gl.bindBuffer(target, glBuffer);
             gl.bufferData(target, typedArray, gl.STATIC_DRAW);
@@ -232,7 +225,7 @@ export class GLTFLoader {
 
     private async _getBuffer(index: number){
         if (!this._arrayBuffers[index]){
-            const buffer = this._schema.buffers[index];
+            const buffer = this._gltf.buffers[index];
 
             const response = await fetch(this._getFetchUri(buffer.uri));
             if (response.status != 200) {
@@ -245,18 +238,18 @@ export class GLTFLoader {
     }
 
     private async _getMaterial(meshIndex: number) {
-        const gltfMesh = this._schema.meshes[meshIndex];
+        const gltfMesh = this._gltf.meshes[meshIndex];
 
         let faceMaterial: Material = null;
 
         for (const primitive of gltfMesh.primitives) {
-            const type = primitive.hasOwnProperty("mode") ? primitive.mode : GLTFPrimitiveMode.Triangles;
+            const type = primitive.hasOwnProperty("mode") ? primitive.mode : GLTF.PrimitiveMode.Triangles;
 
-            if (type != GLTFPrimitiveMode.Triangles)
+            if (type != GLTF.PrimitiveMode.Triangles)
                 continue;
 
             if (primitive.hasOwnProperty("material")) {
-                const gltfMaterial = this._schema.materials[primitive.material];
+                const gltfMaterial = this._gltf.materials[primitive.material];
                 faceMaterial = new Material(await this._webgl.defaultShaders.unlitTextured());
                 const params = faceMaterial.params as UnlitTexturedParams;
                 params.texture = await this._getTexture(gltfMaterial.pbrMetallicRoughness.baseColorTexture.index);
@@ -271,7 +264,7 @@ export class GLTFLoader {
 
     private async _getTexture(index: number) {
         if (!this._textures[index]) {
-            const image = this._schema.images[index];
+            const image = this._gltf.images[index];
             this._textures[index] = this._webgl.createTexture(index.toString(), await downloadImage(this._getFetchUri(image.uri)));
         }
         return this._textures[index];

@@ -27,7 +27,7 @@ export class WebGl {
         glMatrix.setMatrixArrayType(Array);
 
         this.canvas = canvas;
-        this.resizeCanvas();
+        this.canvasResized();
 
         this.gl = this.canvas.getContext('webgl2');
 
@@ -70,7 +70,7 @@ export class WebGl {
         });
     }
 
-    public resizeCanvas() {
+    public canvasResized() {
         // set the client's width and height to their actual screen size.
         // This is needed in order for the webgl drawing buffer to be correctly sized.
         this.canvas.width = this.canvas.clientWidth;

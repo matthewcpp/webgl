@@ -1,4 +1,4 @@
-export enum GLTFComponentType {
+export enum ComponentType {
     Byte = 5120,
     UnsignedByte = 5121,
     Short = 5122,
@@ -7,17 +7,17 @@ export enum GLTFComponentType {
     Float = 5126
 }
 
-export interface GLTFNode {
+export interface Node {
     name?: string,
     mesh?: number,
 }
 
-export interface GLTFScene {
+export interface Scene {
     name?: string;
     nodes: number[];
 }
 
-export enum GLTFPrimitiveMode{
+export enum PrimitiveMode{
     Points = 0,
     Lines = 1,
     LineLoop = 2,
@@ -27,75 +27,75 @@ export enum GLTFPrimitiveMode{
     TriangleFan = 6
 }
 
-export interface GLTFPbrMetallicRoughness {
+export interface PBRMetallicRoughness {
     baseColorTexture: {
         index: number;
     }
 }
 
-export interface GLTFMaterial {
+export interface Material {
     name: string;
-    pbrMetallicRoughness: GLTFPbrMetallicRoughness;
+    pbrMetallicRoughness: PBRMetallicRoughness;
 }
 
-export interface GLTFPrimitive
+export interface Primitive
 {
     attributes: {[key: string]: number};
-    mode: GLTFPrimitiveMode;
+    mode: PrimitiveMode;
     indices: number;
     material?: number;
 }
 
-export interface GLTFMesh {
+export interface Mesh {
     name?: string;
-    primitives: GLTFPrimitive[];
+    primitives: Primitive[];
 }
 
-export interface GLTFAccessor {
+export interface Accessor {
     bufferView: number;
     byteOffset: number;
-    componentType: GLTFComponentType;
+    componentType: ComponentType;
     count: number;
     type: string;
     max: number[];
     min: number[];
 }
 
-export enum GlTFBufferViewTarget {
+export enum BufferViewTarget {
     ArrayBuffer = 34962,
     ElementArrayBuffer = 34963
 }
 
-export interface GLTFBufferView {
+export interface BufferView {
     buffer: number;
     byteOffset: number;
     byteLength: number;
     byteStride?: number;
-    target: GlTFBufferViewTarget;
+    target: BufferViewTarget;
 }
 
-export interface GLTFBuffer {
+export interface Buffer {
     uri: string;
     byteLength: number;
 }
 
-export interface GLTFAsset {
+export interface Asset {
     version: string;
 }
 
-export interface GLTFImage {
+export interface Image {
     uri: string;
 }
 
-export interface GLTFSchema {
+export interface Schema {
     scene?: number;
-    scenes?: GLTFScene[];
-    nodes?: GLTFNode[];
-    meshes?: GLTFMesh[];
-    buffers?: GLTFBuffer[];
-    bufferViews?: GLTFBufferView[];
-    accessors?: GLTFAccessor[];
-    images?: GLTFImage[];
-    materials?: GLTFMaterial[]
-    asset: GLTFAsset;
+    scenes?: Scene[];
+    nodes?: Node[];
+    meshes?: Mesh[];
+    buffers?: Buffer[];
+    bufferViews?: BufferView[];
+    accessors?: Accessor[];
+    images?: Image[];
+    materials?: Material[]
+    asset: Asset;
 }
