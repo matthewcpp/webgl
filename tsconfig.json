@@ -3,16 +3,14 @@
     "module": "es6",
     "target": "es2017",
     "sourceMap": false,
-    "outDir": "lib",
+    "outDir": "dist",
     "lib": [
       "es2017",
       "dom"
     ]
   },
-  "exclude": [
-    "node_modules",
-    "lib",
-    "external",
-    "scripts"
+  "include": [
+    "src/**/*",
+    "examples/**/*"
   ]
 }

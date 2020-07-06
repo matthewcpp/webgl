@@ -1,4 +1,4 @@
-import {Transform} from "./Transform.js";
+import {Node} from "./Node.js";
 
 import * as vec3 from "../external/gl-matrix/vec3.js"
 import * as mat4 from "../external/gl-matrix/mat4.js"
@@ -12,9 +12,9 @@ export class Camera {
     public projectionMatrix: mat4 = mat4.create();
     public viewMatrix: mat4 = mat4.create();
 
-    public transform = new Transform();
-
-    constructor() {
+    constructor(
+        public readonly node
+    ) {
         this.updateProjectionMatrix();
     }
 
@@ -27,11 +27,11 @@ export class Camera {
     }
 
     public updateViewMatrix() {
-        let target = this.transform.forward();
-        vec3.add(target, this.transform.position, target);
+        let target = this.node.transform.forward();
+        vec3.add(target, this.node.transform.position, target);
 
-        let up = this.transform.up();
+        let up = this.node.transform.up();
 
-        mat4.lookAt(this.viewMatrix, this.transform.position, target, up);
+        mat4.lookAt(this.viewMatrix, this.node.transform.position, target, up);
     }
 }

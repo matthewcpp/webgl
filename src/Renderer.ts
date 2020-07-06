@@ -1,82 +1,90 @@
-import {MeshBuffer, MeshVertexAttributes} from "./Mesh.js";
 import {Material} from "./Material.js";
 import {Camera} from "./Camera.js";
-import {Transform} from "./Transform.js";
+import {Node} from "./Node.js";
 
-import * as vec4 from "../external/gl-matrix/vec4.js";
 import * as mat4 from "../external/gl-matrix/mat4.js";
-
 
 export class Renderer {
     private readonly gl: WebGL2RenderingContext;
 
     private _camera: Camera = null;
-    private _material: Material = null;
+
+    private readonly _wglUnifromBlockBuffer: WebGLBuffer;
+    private readonly _wglUnifromBlockData: ArrayBuffer;
+    private readonly _wglMvpMatrixBuffer = new Float32Array(16)
+
 
     constructor(gl: WebGL2RenderingContext) {
         this.gl = gl;
+
+        // set up the default uniform buffer that is passed to all shaders
+        // note that the default uniform buffer is bound at location 0
+        // right now we are just passing 2 matrices
+        this._wglUnifromBlockData = new ArrayBuffer(16 * 4 * 2)
+        this._wglUnifromBlockBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.UNIFORM_BUFFER, this._wglUnifromBlockBuffer);
+        gl.bufferData(gl.UNIFORM_BUFFER, this._wglUnifromBlockData, gl.DYNAMIC_DRAW);
+        gl.bindBufferRange(gl.UNIFORM_BUFFER, 0, this._wglUnifromBlockBuffer, 0, this._wglUnifromBlockData.byteLength);
     }
 
     public setCamera(camera: Camera) {
         this._camera = camera;
+        this._camera.updateProjectionMatrix();
+        this._camera.updateViewMatrix();
+
+        // set the standard shader data in the local buffer
+        const view = new Float32Array(this._wglUnifromBlockData);
+        view.set(this._camera.projectionMatrix, 0);
+        view.set(this._camera.viewMatrix, 16);
+
+        // upload the latest standard shader data to the gl buffer on gpu
+        this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, this._wglUnifromBlockBuffer);
+        this.gl.bufferSubData(this.gl.UNIFORM_BUFFER, 0, this._wglUnifromBlockData);
     }
 
-    public activateMaterial(material: Material) {
-        this._material = material;
+    public drawScene(node: Node) {
+        for (let i = 0; i < node.transform.getChildCount(); i++) {
+            const child = node.transform.getChild(i);
 
-        this.gl.useProgram(this._material.shader.program);
-        this._material.shader.bindUniformBlocks(this.gl);
-
-        const ubo = material.shader.uniformBlocks.get("Camera");
-        let projectionMatrix = ubo.members.get("projection");
-        mat4.copy(projectionMatrix, this._camera.projectionMatrix);
-
-        material.vec4.forEach((value: vec4, key: string) => {
-            this.gl.uniform4fv(material.shader.uniforms.get(key), value);
-        });
-
-        material.sampler2D.forEach((value: WebGLTexture, key: string) => {
-            this.gl.activeTexture(this.gl.TEXTURE0); // TODO: fixme
-            this.gl.bindTexture(this.gl.TEXTURE_2D, value);
-            const samplerLocation = material.shader.uniforms.get(key);
-            this.gl.uniform1i(samplerLocation, 0);
-        });
+            if (child.node.components.mesh && child.node.components.material)
+                this._drawNode(child.node);
+        }
     }
 
-    public drawMeshBuffer(meshBuffer: MeshBuffer, transform: Transform) {
-        let modelView = mat4.create();
-        mat4.multiply(modelView, this._camera.viewMatrix, transform.matrix);
+    private _drawNode(node: Node) {
+        const material = node.components.material;
+        const shader = material.shader;
+        this.gl.useProgram(material.shader.program);
 
-        const ubo = this._material.shader.uniformBlocks.get("Camera");
-        let modelViewMatrix = ubo.members.get("modelView");
-        mat4.copy(modelViewMatrix, modelView);
+        // update the per object standard shader values
+        // mat4.multiply(this._wglMvpMatrixBuffer, this._camera.viewMatrix, node.transform.localMatrix);
+        mat4.copy(this._wglMvpMatrixBuffer, node.transform.localMatrix);
 
-        this._material.shader.updateUniformBuffer(this.gl);
+        // send the default data to the newly active shader
+        this.gl.uniformBlockBinding(shader.program, shader.blockIndex, 0);
+        this.gl.uniformMatrix4fv(shader.mvpLocation, false, this._wglMvpMatrixBuffer);
 
-        const vertexSize = meshBuffer.getVertexSize();
-        let offset = 0;
+        shader.shaderInterface.push(shader.program, this.gl, material.params);
 
-        const vertexPosition = this._material.shader.attributes.get("aVertexPosition");
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, meshBuffer.vertexBuffer);
-        this.gl.vertexAttribPointer(vertexPosition, 3, this.gl.FLOAT, false, vertexSize, 0);
-        this.gl.enableVertexAttribArray(vertexPosition);
-        offset += 12;
+        const mesh = node.components.mesh;
 
-        if (meshBuffer.hasVertexAttribute(MeshVertexAttributes.Normals)) {
-            const normalPosition = this._material.shader.attributes.get("aVertexNormal");
-            this.gl.vertexAttribPointer(normalPosition, 3, this.gl.FLOAT, false, vertexSize, offset);
-            this.gl.enableVertexAttribArray(normalPosition);
-            offset += 12;
+        for (const geometry of mesh.geometry) {
+            if (geometry.type != this.gl.TRIANGLES) // TEMP
+                continue;
+
+            const shaderAttributes = shader.shaderInterface.attributes();
+
+            for (const attribute of geometry.attributes) {
+                if (shaderAttributes.indexOf(attribute.index) < 0)
+                    continue;
+
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribute.buffer);
+                this.gl.vertexAttribPointer(attribute.index, attribute.componentCount, attribute.componentType, false, attribute.stride, attribute.offset);
+                this.gl.enableVertexAttribArray(attribute.index);
+            }
+
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, geometry.indices.buffer);
+            this.gl.drawElements(geometry.type, geometry.indices.count, geometry.indices.componentType, geometry.indices.offset);
         }
-
-        if (meshBuffer.hasVertexAttribute(MeshVertexAttributes.TexCoords)) {
-            const textCordPosition = this._material.shader.attributes.get("aTextureCoord");
-            this.gl.vertexAttribPointer(textCordPosition, 2, this.gl.FLOAT, false, vertexSize, offset);
-            this.gl.enableVertexAttribArray(textCordPosition);
-        }
-
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, meshBuffer.elementBuffer);
-        const indexType = meshBuffer.elementCount > 65536 ? this.gl.UNSIGNED_INT: this.gl.UNSIGNED_SHORT;
-        this.gl.drawElements(this.gl.TRIANGLES, meshBuffer.elementCount, indexType, 0);
     }
 }

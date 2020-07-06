@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "dependencies": {
     "fs-extra": "^8.1.0",
-    "gl-matrix": "^3.2.1",
+    "gl-matrix": "^3.2.1"
   },
   "devDependencies": {
     "@types/fs-extra": "^8.0.1",

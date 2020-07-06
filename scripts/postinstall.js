@@ -2,14 +2,22 @@ const fs = require("fs-extra");
 const path = require("path");
 
 const projectRoot = path.join(__dirname, "..");
-const nodeModulesDir = path.join(projectRoot, "node_modules");
+const distDir = path.join(projectRoot, "dist");
 const externalDir = path.join(projectRoot, "external");
+const externalDistDir = path.join(distDir, "external");
+const includeDir = path.join(distDir, "include");
 
-if (!fs.existsSync(externalDir)) {
-    fs.mkdirSync(externalDir);
+
+for (const dir of [distDir, externalDistDir, externalDir, includeDir]) {
+    if (!fs.existsSync(dir))
+        fs.mkdirSync(dir);
 }
 
-const glMatrixSrcDir = path.join(nodeModulesDir, "gl-matrix", "esm");
-const glMatrixDestDir = path.join(externalDir, "gl-matrix");
-console.log(`Setting up gl-matrix: ${glMatrixSrcDir} ---> ${glMatrixDestDir}`);
-fs.copySync(glMatrixSrcDir, glMatrixDestDir);
+const glMatrixSrcDir = path.join(projectRoot, "node_modules", "gl-matrix", "esm");
+
+for (const dir of [externalDir, externalDistDir]) {
+    const glMatrixDestDir = path.join(dir, "gl-matrix");
+
+    console.log(`Installing gl-matrix: ${glMatrixSrcDir} ---> ${glMatrixDestDir}`);
+    fs.copySync(glMatrixSrcDir, glMatrixDestDir);
+}

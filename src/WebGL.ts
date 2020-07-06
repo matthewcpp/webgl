@@ -1,21 +1,33 @@
-import {Shader, ShaderData} from "./Shader.js";
-import {MeshBuffer, MeshBufferData} from "./Mesh.js"
+import {Mesh, Primitive} from "./Mesh.js"
 import {Renderer} from "./Renderer.js";
 import {Texture} from "./Texture.js"
+import {Node} from "./Node.js";
+import {Camera} from "./Camera.js";
+import {Shader, ShaderData} from "./Shader.js";
+import {DefaultShaders} from "./shader/DefaultShaders.js";
+
+import * as glMatrix from "../external/gl-matrix/common.js";
+import * as vec3 from "../external/gl-matrix/vec3.js"
 
 export class WebGl {
     public readonly canvas: HTMLCanvasElement;
-    private readonly gl: WebGL2RenderingContext;
+    public readonly gl: WebGL2RenderingContext;
     private readonly _renderer: Renderer;
 
     public shaders = new Map<string, Shader>();
-    public meshBuffers = new Map<string, MeshBuffer>();
+    public meshes = new Map<string, Mesh>();
     public textures = new Map<string, WebGLTexture>();
-    public renderFunc: (timestamp: DOMHighResTimeStamp, renderer: Renderer) => void;
+    public renderFunc: (timestamp: DOMHighResTimeStamp, renderer: Renderer) => void = null;
+    public mainCamera: Camera = null;
+
+    public readonly defaultShaders = new DefaultShaders(this);
+    public readonly rootNode = new Node("root");
 
     public constructor(canvas: HTMLCanvasElement) {
+        glMatrix.setMatrixArrayType(Array);
+
         this.canvas = canvas;
-        this.resizeCanvas();
+        this.canvasResized();
 
         this.gl = this.canvas.getContext('webgl2');
 
@@ -24,13 +36,13 @@ export class WebGl {
         }
 
         this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
-
-        this._renderer = new Renderer(this.gl);
-
         this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
         this.gl.clearDepth(1.0);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
+
+        this._createDefaultCamera();
+        this._renderer = new Renderer(this.gl);
     }
 
     public start() {
@@ -45,17 +57,20 @@ export class WebGl {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+        this._renderer.setCamera(this.mainCamera);
 
         if (this.renderFunc !== null) {
             this.renderFunc(timestamp, this._renderer);
         }
+
+        this._renderer.drawScene(this.rootNode);
 
         requestAnimationFrame((timestamp: DOMHighResTimeStamp) => {
             this.drawScene(timestamp);
         });
     }
 
-    public resizeCanvas() {
+    public canvasResized() {
         // set the client's width and height to their actual screen size.
         // This is needed in order for the webgl drawing buffer to be correctly sized.
         this.canvas.width = this.canvas.clientWidth;
@@ -67,21 +82,21 @@ export class WebGl {
             throw new Error(`Shader with name: ${name} already exists.`);
         }
 
-        const shader = Shader.create(this.gl, name, shaderData);
+        const shader = Shader.create(shaderData, this.gl);
         this.shaders.set(name, shader);
 
         return shader;
     }
 
-    public createMeshBuffer(name: string, meshData: MeshBufferData): MeshBuffer {
-        if (this.meshBuffers.has(name)) {
+    public createMesh(name: string, geometry: Primitive[]) {
+        if (this.meshes.has(name)) {
             throw new Error(`MeshBuffer with name: ${name} already exists.`);
         }
 
-        const meshBuffer = MeshBuffer.create(this.gl, meshData);
-        this.meshBuffers.set(name, meshBuffer);
+        const mesh = new Mesh(geometry);
+        this.meshes.set(name, mesh);
 
-        return meshBuffer;
+        return mesh;
     }
 
     public createTexture(name: string, image: HTMLImageElement) {
@@ -93,5 +108,15 @@ export class WebGl {
         this.textures.set(name, texture);
 
         return texture;
+    }
+
+    private _createDefaultCamera() {
+        const cameraNode = new Node("Main Camera");
+        vec3.set(cameraNode.transform.position, 0.0, 7.0, 10.0);
+        cameraNode.transform.updateMatrix();
+        cameraNode.transform.lookAt([0.0, 1.0, 0.0]);
+        cameraNode.components.camera = new Camera(cameraNode);
+        this.mainCamera = cameraNode.components.camera;
+        this.rootNode.transform.addChild(cameraNode.transform);
     }
 }
