@@ -9,7 +9,7 @@ export class Camera {
     private _aspect = 1.33;
     private _fovy = 45.0;
 
-    private _matricesDirty = false;
+    public _matricesDirty = false;
 
     private _projectionMatrix: mat4 = mat4.create();
     private _viewMatrix: mat4 = mat4.create();

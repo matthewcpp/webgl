@@ -65,9 +65,9 @@ export class Node {
         return upp;
     }
 
-    public lookAt(target: vec3) {
+    public lookAt(target: vec3, up: vec3) {
         const lookAtMatrix = mat4.create();
-        mat4.targetTo(lookAtMatrix, target, this.position, this.up());
+        mat4.targetTo(lookAtMatrix, target, this.position, up);
         mat4.getRotation(this.rotation, lookAtMatrix);
     }
 }

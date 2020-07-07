@@ -23,6 +23,9 @@ export class WebGl {
     public readonly defaultShaders = new DefaultShaders(this);
     public readonly rootNode = new Node("root");
 
+    public deltaTime: number;
+    private _lastUpdateTime: DOMHighResTimeStamp = 0.0;
+
     public constructor(canvas: HTMLCanvasElement) {
         glMatrix.setMatrixArrayType(Array);
 
@@ -46,12 +49,15 @@ export class WebGl {
     }
 
     public start() {
+        this._lastUpdateTime = performance.now();
         requestAnimationFrame((timestamp: DOMHighResTimeStamp) => {
             this.drawScene(timestamp);
         });
     }
 
     private drawScene(timestamp: DOMHighResTimeStamp) {
+        const currentTime = performance.now();
+        this.deltaTime = (currentTime - this._lastUpdateTime) / 1000.0;
         const gl = this.gl;
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -64,6 +70,7 @@ export class WebGl {
         }
 
         this._renderer.drawScene(this.rootNode);
+        this._lastUpdateTime = currentTime;
 
         requestAnimationFrame((timestamp: DOMHighResTimeStamp) => {
             this.drawScene(timestamp);
@@ -114,7 +121,7 @@ export class WebGl {
         const cameraNode = new Node("Main Camera");
         vec3.set(cameraNode.position, 0.0, 7.0, 10.0);
         cameraNode.updateMatrix();
-        cameraNode.lookAt([0.0, 1.0, 0.0]);
+        cameraNode.lookAt([0.0, 1.0, 0.0], cameraNode.up());
         cameraNode.components.camera = new Camera(cameraNode);
         this.mainCamera = cameraNode.components.camera;
         this.rootNode.addChild(cameraNode);
