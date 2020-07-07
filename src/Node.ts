@@ -10,7 +10,7 @@ export class Node {
     private readonly children = new Array<Node>();
 
     public position = vec3.fromValues(0.0, 0.0, 0.0);
-    public rotation = quat.create();
+    public rotation = vec3.fromValues(0.0, 0.0, 0.0);
     public scale = vec3.fromValues(1.0, 1.0, 1.0);
 
     public readonly localMatrix = mat4.create();
@@ -37,7 +37,9 @@ export class Node {
     }
 
     public updateMatrix() {
-        mat4.fromRotationTranslationScale(this.localMatrix, this.rotation, this.position, this.scale);
+        const rotation = quat.create();
+        quat.fromEuler(rotation, this.rotation[0], this.rotation[1], this.rotation[2]);
+        mat4.fromRotationTranslationScale(this.localMatrix, rotation, this.position, this.scale);
 
         if (Node.freeze)
             return;

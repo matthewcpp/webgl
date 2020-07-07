@@ -10,11 +10,10 @@ window.onload = async () => {
     webGl.canvas.oncontextmenu = () => false;
 
     const loader = new GLTF.Loader(webGl);
-    //const nodes = await loader.load("triangle.gltf");
-    const root = await loader.load("/models/Cube/Cube.gltf");
+    const roots = await loader.load("/models/Cube/Cube.gltf");
 
     const arcball = new Arcball(webGl.mainCamera.node, webGl);
-    arcball.setInitial(root[0]);
+    arcball.setInitial(roots[0]);
     webGl.mainCamera.node.components.behavior = arcball;
 
     webGl.start();

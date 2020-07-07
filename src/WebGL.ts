@@ -8,6 +8,7 @@ import {DefaultShaders} from "./shader/DefaultShaders.js";
 
 import * as glMatrix from "../external/gl-matrix/common.js";
 import * as vec3 from "../external/gl-matrix/vec3.js"
+import {Behavior} from "./behaviors/Behavior.js";
 
 export class WebGl {
     public readonly canvas: HTMLCanvasElement;
@@ -17,11 +18,12 @@ export class WebGl {
     public shaders = new Map<string, Shader>();
     public meshes = new Map<string, Mesh>();
     public textures = new Map<string, WebGLTexture>();
-    public renderFunc: (timestamp: DOMHighResTimeStamp, renderer: Renderer) => void = null;
     public mainCamera: Camera = null;
 
     public readonly defaultShaders = new DefaultShaders(this);
     public readonly rootNode = new Node("root");
+
+    public readonly _behaviors = new Array<Behavior>();
 
     public deltaTime: number;
     private _lastUpdateTime: DOMHighResTimeStamp = 0.0;
@@ -51,30 +53,37 @@ export class WebGl {
     public start() {
         this._lastUpdateTime = performance.now();
         requestAnimationFrame((timestamp: DOMHighResTimeStamp) => {
-            this.drawScene(timestamp);
+            this._mainLoop(timestamp);
         });
     }
 
-    private drawScene(timestamp: DOMHighResTimeStamp) {
-        const currentTime = performance.now();
+    private _mainLoop(currentTime: DOMHighResTimeStamp) {
         this.deltaTime = (currentTime - this._lastUpdateTime) / 1000.0;
+        this._update();
+        this._drawScene()
+
+        this._lastUpdateTime = currentTime;
+
+        requestAnimationFrame((currentTime: DOMHighResTimeStamp) => {
+            this._mainLoop(currentTime);
+        });
+    }
+
+    private _update() {
+        for (const behavior of this._behaviors) {
+            if (behavior.active)
+                behavior.update();
+        }
+    }
+
+    private _drawScene() {
         const gl = this.gl;
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+
         this._renderer.setCamera(this.mainCamera);
-
-        if (this.renderFunc !== null) {
-            this.renderFunc(timestamp, this._renderer);
-        }
-
         this._renderer.drawScene(this.rootNode);
-        this._lastUpdateTime = currentTime;
-
-        requestAnimationFrame((timestamp: DOMHighResTimeStamp) => {
-            this.drawScene(timestamp);
-        });
     }
 
     public canvasResized() {

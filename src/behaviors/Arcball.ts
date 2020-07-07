@@ -6,7 +6,7 @@ import {Bounds} from "../Bounds.js";
 import * as vec3 from "../../external/gl-matrix/vec3.js"
 import * as quat from "../../external/gl-matrix/quat.js"
 
-export class Arcball implements Behavior {
+export class Arcball extends Behavior {
     private _dragging = false;
     private _distance = 0.0;
     private _rotX = 0.0;
@@ -15,14 +15,16 @@ export class Arcball implements Behavior {
 
     public rotationSpeed = 180.0;
 
-    public constructor(
-        private _cameraNode: Node,
-        private _webgl: WebGl
-    ){
-        _webgl.canvas.onpointerdown = (event: PointerEvent) => { this._onPointerDown(event); }
-        _webgl.canvas.onpointermove = (event:PointerEvent) => { this._onPointerMove(event); }
-        _webgl.canvas.onpointerup = (event: PointerEvent) => { this._onPointerUp(event); }
-        _webgl.canvas.onwheel = (event: WheelEvent) => { this._onWheel(event); }
+    private _cameraNode: Node;
+
+    public constructor(cameraNode: Node, webgl: WebGl){
+        super(webgl);
+        this._cameraNode = cameraNode;
+
+        webgl.canvas.onpointerdown = (event: PointerEvent) => { this._onPointerDown(event); }
+        webgl.canvas.onpointermove = (event:PointerEvent) => { this._onPointerMove(event); }
+        webgl.canvas.onpointerup = (event: PointerEvent) => { this._onPointerUp(event); }
+        webgl.canvas.onwheel = (event: WheelEvent) => { this._onWheel(event); }
     }
 
     update(): void {}
@@ -37,7 +39,7 @@ export class Arcball implements Behavior {
     }
 
     private _orbit(deltaX: number, deltaY:number) {
-        const rotationAmount = this.rotationSpeed * this._webgl.deltaTime
+        const rotationAmount = this.rotationSpeed * this.webgl.deltaTime
 
         this._rotY += deltaX * rotationAmount;
         this._rotX += deltaY * rotationAmount;
@@ -99,6 +101,6 @@ export class Arcball implements Behavior {
     private _onWheel(event: WheelEvent) {
         event.preventDefault();
         const delta = event.deltaY > 0 ? 1 : -1;
-        this._zoom();
+        this._zoom(delta);
     }
 }
