@@ -1,8 +1,8 @@
 import * as vec4 from "../../external/gl-matrix/vec4.js";
 import {ShaderInterface} from "../Shader.js";
 
-export class UnlitParams {
-    public color: vec4 = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+export interface UnlitParams {
+    color: vec4;
 }
 
 export class UnlitShader implements ShaderInterface{
@@ -13,7 +13,7 @@ export class UnlitShader implements ShaderInterface{
         this._fragColor = gl.getUniformLocation(program, "frag_color");
 
         if (this._fragColor == null) {
-            throw new Error("Unable to get uniform location for frag_color in unlit shader.")
+            throw new Error("Unable to get uniform location for frag_color in unlit shader.");
         }
     }
 
@@ -21,15 +21,28 @@ export class UnlitShader implements ShaderInterface{
         return UnlitShader._vertexAttributes;
     }
 
-    public push(program: WebGLProgram, gl: WebGL2RenderingContext, params: any) {
+    public push(program: WebGLProgram, gl: WebGL2RenderingContext, params: Object): void {
         const unlitParams = params as UnlitParams;
         gl.uniform4fv(this._fragColor, unlitParams.color);
     }
+
+    createParams(): Object {
+        return {
+            color: vec4.fromValues(1.0, 1.0, 1.0, 1.0)
+        };
+    }
+
+    copyParams(src: Object): Object {
+        const unlitParams = src as UnlitParams;
+        return {
+            color: vec4.fromValues(unlitParams.color[0], unlitParams.color[1], unlitParams.color[2], unlitParams.color[3])
+        };
+    }
 }
 
-export class UnlitTexturedParams {
-    public color: vec4 = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-    public texture: WebGLTexture = null;
+export interface UnlitTexturedParams {
+    color: vec4;
+    texture: WebGLTexture;
 }
 
 export class UnlitTexturedShader implements ShaderInterface{
@@ -57,5 +70,20 @@ export class UnlitTexturedShader implements ShaderInterface{
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, unlitParams.texture);
         gl.uniform1i(this._sampler0, 0);
+    }
+
+    createParams(): Object {
+        return {
+            color: vec4.fromValues(1.0, 1.0, 1.0, 1.0),
+            texture: WebGLTexture = null
+        };
+    }
+
+    copyParams(src: Object): Object {
+        const params = src as UnlitTexturedParams;
+        return {
+            color: vec4.fromValues(params.color[0], params.color[1], params.color[2], params.color[3]),
+            texture: params.texture
+        };
     }
 }

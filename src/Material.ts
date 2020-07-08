@@ -7,9 +7,9 @@ export class Material {
         this.shader = shader;
 
         if (params)
-            this.params = Object.assign({}, params);
+            this.params = shader.shaderInterface.copyParams(params);
         else
-            this.params = shader.createParams();
+            this.params = shader.shaderInterface.createParams();
     }
 
     public clone(): Material {

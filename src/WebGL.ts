@@ -43,6 +43,10 @@ export class WebGl {
             throw new Error("Unable to initialize WebGL 2.0");
         }
 
+        this._renderer = new Renderer(this.gl);
+    }
+
+    public async init() {
         this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
         this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
         this.gl.clearDepth(1.0);
@@ -50,11 +54,10 @@ export class WebGl {
         this.gl.depthFunc(this.gl.LEQUAL);
 
         this._createDefaultCamera();
-        this._renderer = new Renderer(this.gl);
+        this.defaultMaterial = new Material(await this.defaultShaders.unlit());
     }
 
-    public async start() {
-        this.defaultMaterial = new Material(await this.defaultShaders.unlit());
+    public start() {
         this._lastUpdateTime = performance.now();
         requestAnimationFrame((timestamp: DOMHighResTimeStamp) => {
             this._mainLoop(timestamp);

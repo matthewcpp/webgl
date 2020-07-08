@@ -1,18 +1,24 @@
 export interface ShaderInterface {
     // called after the shader has been successfully compiled
-    init(program: WebGLProgram, gl: WebGL2RenderingContext);
+    init(program: WebGLProgram, gl: WebGL2RenderingContext): void;
 
-    // called to query whether the given geometry attribute should be activated for this shader
+    // called by renderer to know what attributes should be bound for this program
     attributes() : Array<number>;
 
     // called when an object will be drawn with this shader
-    push(program: WebGLProgram, gl: WebGL2RenderingContext, params: any)
+    push(program: WebGLProgram, gl: WebGL2RenderingContext, params: Object);
+
+    // create a fresh copy of shader parameters with default values
+    createParams(): Object;
+
+    // deep copy an existing set of shader parameters
+    copyParams(src: Object): Object;
 }
 
 export enum DefaultAttributeLocations {
     Position = 0,
     Normal = 1,
-    TexCoord0
+    TexCoord0 = 2
 }
 
 export class ShaderData {
@@ -20,7 +26,6 @@ export class ShaderData {
     public vertexSource: string;
     public fragmentSource: string;
     public shaderInterface: ShaderInterface;
-    public createParams: () => Object;
 }
 
 export class Shader {
@@ -29,7 +34,6 @@ export class Shader {
         public readonly blockIndex: number,
         public readonly mvpLocation: WebGLUniformLocation,
         public readonly shaderInterface: ShaderInterface,
-        public readonly createParams: () => Object
     ){}
 
     public static create(shaderData: ShaderData, gl: WebGL2RenderingContext) {
@@ -45,7 +49,7 @@ export class Shader {
 
         shaderData.shaderInterface.init(program, gl);
 
-        return new Shader(program, wglDataIndex, wglMvpLocation, shaderData.shaderInterface, shaderData.createParams);
+        return new Shader(program, wglDataIndex, wglMvpLocation, shaderData.shaderInterface);
     }
 
     private static _shaderDefineStr = "//!WGL_DEFINES";

@@ -15,7 +15,6 @@ export class DefaultShaders {
 
         const shaderData = await downloadShaderSource(`${this.baseUrl}/unlit`);
         shaderData.shaderInterface = new UnlitShader();
-        shaderData.createParams = () => { return new UnlitParams(); }
 
         return this._webGl.createShader(name, shaderData);
     }
@@ -28,7 +27,6 @@ export class DefaultShaders {
         const shaderData = await downloadShaderSource(`${this.baseUrl}/unlit`);
         shaderData.preprocessorDefines.push("#define WGL_TEXTURE_COORDS")
         shaderData.shaderInterface = new UnlitTexturedShader();
-        shaderData.createParams = () => { return new UnlitTexturedParams(); }
 
         return this._webGl.createShader(name, shaderData);
     }
