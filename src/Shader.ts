@@ -20,7 +20,7 @@ export class ShaderData {
     public vertexSource: string;
     public fragmentSource: string;
     public shaderInterface: ShaderInterface;
-    public createParams: () => any;
+    public createParams: () => Object;
 }
 
 export class Shader {
@@ -29,7 +29,7 @@ export class Shader {
         public readonly blockIndex: number,
         public readonly mvpLocation: WebGLUniformLocation,
         public readonly shaderInterface: ShaderInterface,
-        public readonly createParams: () => any
+        public readonly createParams: () => Object
     ){}
 
     public static create(shaderData: ShaderData, gl: WebGL2RenderingContext) {

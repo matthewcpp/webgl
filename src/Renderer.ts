@@ -92,11 +92,12 @@ export class Renderer {
 
         // send the default data to the newly active shader
         this.gl.uniformBlockBinding(shader.program, shader.blockIndex, 0);
-        this.gl.uniformMatrix4fv(shader.mvpLocation, false, this._wglMvpMatrixBuffer);
 
         for (const drawCall of drawCalls) {
             // TODO pass the mvp matrix
             mat4.copy(this._wglMvpMatrixBuffer, drawCall.matrix);
+            this.gl.uniformMatrix4fv(shader.mvpLocation, false, this._wglMvpMatrixBuffer);
+
             shader.shaderInterface.push(shader.program, this.gl, drawCall.params);
 
             for (const attribute of drawCall.primitive.attributes) {

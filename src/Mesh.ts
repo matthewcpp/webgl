@@ -43,11 +43,27 @@ export class MeshInstance {
     public materials: Array<Material>;
 
     public constructor(
-        public readonly mesh: Mesh
+        public readonly mesh: Mesh,
+        materials?: Array<Material>
     ) {
+
         this.materials = new Array<Material>(mesh.primitives.length);
 
-        for (let i = 0; i < mesh.primitives.length; i++)
-            this.materials[i] = mesh.primitives[i].baseMaterial.clone();
+        if (materials) {
+            if (materials.length !== mesh.primitives.length)
+                throw new Error("Unable to create mesh instance: primitive / material length mismatch.");
+
+            for (let i = 0; i < materials.length; i++)
+                this.materials[i] = materials[i].clone();
+        }
+        else {
+            for (let i = 0; i < mesh.primitives.length; i++)
+                this.materials[i] = mesh.primitives[i].baseMaterial.clone();
+        }
+
+    }
+
+    public clone() {
+        return new MeshInstance(this.mesh, this.materials);
     }
 }
