@@ -30,7 +30,7 @@ export class Arcball extends Behavior {
     update(): void {}
 
     public setInitial(node: Node) {
-        const worldBounding = Bounds.transform(node.worldMatrix, node.components.mesh.geometry[0].bounds);
+        const worldBounding = Bounds.transform(node.worldMatrix, node.components.meshInstance.mesh.primitives[0].bounds);
         this._target = worldBounding.center();
         this._distance = vec3.distance(worldBounding.min, worldBounding.max) * 2.0;
         vec3.copy(this._cameraNode.position, worldBounding.max);

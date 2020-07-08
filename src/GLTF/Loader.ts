@@ -1,7 +1,7 @@
 import {WebGl} from "../WebGL.js";
 import * as GLTF from "./Schema.js";
 import {Node} from "../Node.js";
-import {Attribute, ElementBuffer, Mesh, Primitive} from "../Mesh.js";
+import {Attribute, ElementBuffer, Mesh, MeshInstance, Primitive} from "../Mesh.js";
 import {Material} from "../Material.js";
 import {DefaultAttributeLocations} from "../Shader.js";
 import {downloadImage} from "../Util.js";
@@ -68,8 +68,7 @@ export class Loader {
                 node.name = gltfNode.name;
 
             if (gltfNode.hasOwnProperty("mesh")) {
-                node.components.mesh = await this._getMesh(gltfNode.mesh);
-                node.components.material = await this._getMaterial(gltfNode.mesh);
+                node.components.meshInstance = new MeshInstance(await this._getMesh(gltfNode.mesh));
             }
         }
 
@@ -93,35 +92,36 @@ export class Loader {
 
         const primitives = new Array<Primitive>();
         for (const meshPrimitive of gltfMesh.primitives) {
-            let primitive = new Primitive();
-            primitive.type = this.getPrimitiveType(meshPrimitive);
+            const type = this._getPrimitiveType(meshPrimitive);
+            const baseMaterial = await this._getMaterial(meshPrimitive);
 
+            const attributes = new Array<Attribute>();
             const attributeNames = Object.keys(meshPrimitive.attributes);
+            const bounds = new Bounds();
             for (const attributeName of attributeNames){
                 const attribute = await this._getAttribute(attributeName, meshPrimitive.attributes[attributeName]);
 
                 if (attribute !== null)
-                    primitive.attributes.push(attribute);
+                    attributes.push(attribute);
 
                 // position accessor must specify min and max properties
                 if (attributeName == "POSITION") {
                     const gltfAccessor = this._gltf.accessors[meshPrimitive.attributes[attributeName]];
-                    primitive.bounds = new Bounds();
-                    vec3.copy(primitive.bounds.min, gltfAccessor.min);
-                    vec3.copy(primitive.bounds.max, gltfAccessor.max);
+                    vec3.copy(bounds.min, gltfAccessor.min);
+                    vec3.copy(bounds.max, gltfAccessor.max);
                 }
             }
 
-            primitive.indices = await this._getElementBuffer(meshPrimitive.indices);
+            const indicesBuffer = await this._getElementBuffer(meshPrimitive.indices);
 
-            primitives.push(primitive);
+            primitives.push(new Primitive(type, indicesBuffer, attributes, bounds, baseMaterial));
         }
 
         const name = gltfMesh.name ? gltfMesh.name : index.toString();
         return this._webgl.createMesh(name, primitives);
     }
 
-    private getPrimitiveType(primitive: GLTF.Primitive) {
+    private _getPrimitiveType(primitive: GLTF.Primitive) {
         let mode = primitive.hasOwnProperty("mode") ? primitive.mode : GLTF.PrimitiveMode.Triangles;
 
         switch (mode) {
@@ -247,29 +247,24 @@ export class Loader {
         return this._arrayBuffers[index];
     }
 
-    private async _getMaterial(meshIndex: number) {
-        const gltfMesh = this._gltf.meshes[meshIndex];
+    private async _getMaterial(primitive: GLTF.Primitive) {
+        if (primitive.hasOwnProperty("material")) {
 
-        let faceMaterial: Material = null;
-
-        for (const primitive of gltfMesh.primitives) {
-            const type = primitive.hasOwnProperty("mode") ? primitive.mode : GLTF.PrimitiveMode.Triangles;
-
-            if (type != GLTF.PrimitiveMode.Triangles)
-                continue;
-
-            if (primitive.hasOwnProperty("material")) {
+            // TODO: Logic to determine best material
+            if (!this._materials[primitive.material]) {
                 const gltfMaterial = this._gltf.materials[primitive.material];
-                faceMaterial = new Material(await this._webgl.defaultShaders.unlitTextured());
+                const faceMaterial = new Material(await this._webgl.defaultShaders.unlitTextured());
                 const params = faceMaterial.params as UnlitTexturedParams;
                 params.texture = await this._getTexture(gltfMaterial.pbrMetallicRoughness.baseColorTexture.index);
+
+                this._materials[primitive.material] = faceMaterial;
             }
+
+            return this._materials[primitive.material].clone();
         }
-
-        if (!faceMaterial)
-            faceMaterial = new Material(await this._webgl.defaultShaders.unlit());
-
-        return faceMaterial;
+        else {
+            return this._webgl.defaultMaterial.clone();
+        }
     }
 
     private async _getTexture(index: number) {

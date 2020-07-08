@@ -6,9 +6,12 @@ export class Material {
         public readonly shader: Shader,
     ){
         this.params = shader.createParams();
+
     }
 
     public clone(): Material {
-        return new Material(this.shader);
+        const material = new Material(this.shader);
+        Object.assign(material.params, this.params);
+        return material;
     }
 }

@@ -3,6 +3,17 @@ import {Camera} from "./Camera.js";
 import {Node} from "./Node.js";
 
 import * as mat4 from "../external/gl-matrix/mat4.js";
+import {Shader} from "./Shader.js";
+import {dfsWalk} from "./Walk.js";
+import {Primitive} from "./Mesh.js";
+
+class DrawCall {
+    public constructor(
+        public params: any,
+        public primitive: Primitive,
+        public matrix: mat4,
+    ) {}
+}
 
 export class Renderer {
     private readonly gl: WebGL2RenderingContext;
@@ -13,6 +24,7 @@ export class Renderer {
     private readonly _wglUnifromBlockData: ArrayBuffer;
     private readonly _wglMvpMatrixBuffer = new Float32Array(16)
 
+    private readonly _drawCalls = new Map<Shader, Array<DrawCall>>();
 
     constructor(gl: WebGL2RenderingContext) {
         this.gl = gl;
@@ -41,39 +53,53 @@ export class Renderer {
         this.gl.bufferSubData(this.gl.UNIFORM_BUFFER, 0, this._wglUnifromBlockData);
     }
 
-    public drawScene(node: Node) {
-        for (let i = 0; i < node.getChildCount(); i++) {
-            const child = node.getChild(i);
+    private prepareDraw(root: Node) {
+        this._drawCalls.clear();
 
-            if (child.components.mesh && child.components.material)
-                this._drawNode(child);
-        }
+        dfsWalk(root, (node: Node) => {
+            const meshInstance = node.components.meshInstance;
+
+            if (meshInstance) {
+                for (let i  = 0; i < meshInstance.materials.length; i++) {
+                    // Temporary
+                    if (meshInstance.mesh.primitives[i].type != this.gl.TRIANGLES)
+                        return;
+
+                    const material = meshInstance.materials[i];
+                    const drawCall = new DrawCall(material.params, meshInstance.mesh.primitives[i], node.worldMatrix);
+
+                    if (this._drawCalls.has(material.shader))
+                        this._drawCalls.get(material.shader).push(drawCall);
+                    else
+                        this._drawCalls.set(material.shader, [drawCall]);
+                }
+            }
+        });
     }
 
-    private _drawNode(node: Node) {
-        const material = node.components.material;
-        const shader = material.shader;
-        this.gl.useProgram(material.shader.program);
+    public drawScene(node: Node) {
+        this.prepareDraw(node);
 
-        // update the per object standard shader values
-        // mat4.multiply(this._wglMvpMatrixBuffer, this._camera.viewMatrix, node.transform.localMatrix);
-        mat4.copy(this._wglMvpMatrixBuffer, node.localMatrix);
+        this._drawCalls.forEach((drawables: Array<DrawCall>, shader: Shader) => {
+            this._drawList(shader, drawables);
+        })
+    }
+
+    private _drawList(shader: Shader, drawCalls: Array<DrawCall>) {
+        this.gl.useProgram(shader.program);
+
+        const shaderAttributes = shader.shaderInterface.attributes();
 
         // send the default data to the newly active shader
         this.gl.uniformBlockBinding(shader.program, shader.blockIndex, 0);
         this.gl.uniformMatrix4fv(shader.mvpLocation, false, this._wglMvpMatrixBuffer);
 
-        shader.shaderInterface.push(shader.program, this.gl, material.params);
+        for (const drawCall of drawCalls) {
+            // TODO pass the mvp matrix
+            mat4.copy(this._wglMvpMatrixBuffer, drawCall.matrix);
+            shader.shaderInterface.push(shader.program, this.gl, drawCall.params);
 
-        const mesh = node.components.mesh;
-
-        for (const geometry of mesh.geometry) {
-            if (geometry.type != this.gl.TRIANGLES) // TEMP
-                continue;
-
-            const shaderAttributes = shader.shaderInterface.attributes();
-
-            for (const attribute of geometry.attributes) {
+            for (const attribute of drawCall.primitive.attributes) {
                 if (shaderAttributes.indexOf(attribute.index) < 0)
                     continue;
 
@@ -82,8 +108,8 @@ export class Renderer {
                 this.gl.enableVertexAttribArray(attribute.index);
             }
 
-            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, geometry.indices.buffer);
-            this.gl.drawElements(geometry.type, geometry.indices.count, geometry.indices.componentType, geometry.indices.offset);
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, drawCall.primitive.indices.buffer);
+            this.gl.drawElements(drawCall.primitive.type, drawCall.primitive.indices.count, drawCall.primitive.indices.componentType, drawCall.primitive.indices.offset);
         }
     }
 }

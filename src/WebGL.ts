@@ -9,6 +9,7 @@ import {DefaultShaders} from "./shader/DefaultShaders.js";
 import * as glMatrix from "../external/gl-matrix/common.js";
 import * as vec3 from "../external/gl-matrix/vec3.js"
 import {Behavior} from "./behaviors/Behavior.js";
+import {Material} from "./Material.js";
 
 export class WebGl {
     public readonly canvas: HTMLCanvasElement;
@@ -27,6 +28,8 @@ export class WebGl {
 
     public deltaTime: number;
     private _lastUpdateTime: DOMHighResTimeStamp = 0.0;
+
+    public defaultMaterial: Material;
 
     public constructor(canvas: HTMLCanvasElement) {
         glMatrix.setMatrixArrayType(Array);
@@ -50,7 +53,8 @@ export class WebGl {
         this._renderer = new Renderer(this.gl);
     }
 
-    public start() {
+    public async start() {
+        this.defaultMaterial = new Material(await this.defaultShaders.unlit());
         this._lastUpdateTime = performance.now();
         requestAnimationFrame((timestamp: DOMHighResTimeStamp) => {
             this._mainLoop(timestamp);
