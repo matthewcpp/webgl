@@ -40,16 +40,16 @@ export class Shader {
         const program = Shader._compileShader(shaderData.vertexSource, shaderData.fragmentSource, shaderData.preprocessorDefines, gl);
 
         const wglDataIndex = gl.getUniformBlockIndex(program, 'wglData');
-        const wglMvpLocation = gl.getUniformLocation(program, "wgl_mvp");
+        const wglModelLocation = gl.getUniformLocation(program, "wgl_model");
 
         if (wglDataIndex == -1)
             throw new Error(`Unable to find wglData uniform block`);
-        if (wglMvpLocation == null)
-            throw new Error(`Unable to find wgl_mvp uniform`);
+        if (wglModelLocation == null)
+            throw new Error(`Unable to find wgl_model uniform`);
 
         shaderData.shaderInterface.init(program, gl);
 
-        return new Shader(program, wglDataIndex, wglMvpLocation, shaderData.shaderInterface);
+        return new Shader(program, wglDataIndex, wglModelLocation, shaderData.shaderInterface);
     }
 
     private static _shaderDefineStr = "//!WGL_DEFINES";

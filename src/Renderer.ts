@@ -6,6 +6,7 @@ import * as mat4 from "../external/gl-matrix/mat4.js";
 import {Shader} from "./Shader.js";
 import {dfsWalk} from "./Walk.js";
 import {Primitive} from "./Mesh.js";
+import {UniformBuffer} from "./shader/UniformBuffer.js";
 
 class DrawCall {
     public constructor(
@@ -20,8 +21,7 @@ export class Renderer {
 
     private _camera: Camera = null;
 
-    private readonly _wglUnifromBlockBuffer: WebGLBuffer;
-    private readonly _wglUnifromBlockData: ArrayBuffer;
+    private readonly _uniformBuffer: UniformBuffer;
     private readonly _wglMvpMatrixBuffer = new Float32Array(16)
 
     private readonly _drawCalls = new Map<Shader, Array<DrawCall>>();
@@ -29,28 +29,17 @@ export class Renderer {
     constructor(gl: WebGL2RenderingContext) {
         this.gl = gl;
 
-        // set up the default uniform buffer that is passed to all shaders
-        // note that the default uniform buffer is bound at location 0
-        // right now we are just passing 2 matrices
-        this._wglUnifromBlockData = new ArrayBuffer(16 * 4 * 2)
-        this._wglUnifromBlockBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.UNIFORM_BUFFER, this._wglUnifromBlockBuffer);
-        gl.bufferData(gl.UNIFORM_BUFFER, this._wglUnifromBlockData, gl.DYNAMIC_DRAW);
-        gl.bindBufferRange(gl.UNIFORM_BUFFER, 0, this._wglUnifromBlockBuffer, 0, this._wglUnifromBlockData.byteLength);
+        this._uniformBuffer = new UniformBuffer(this.gl);
+        this._uniformBuffer.ambientColor = [1.0, 1.0, 1.0, 1.0];
+        this._uniformBuffer.ambientIntensity = 0.1;
     }
 
     public setCamera(camera: Camera) {
         this._camera = camera;
         this._camera.aspect = this.gl.canvas.width / this.gl.canvas.height;
 
-        // set the standard shader data in the local buffer
-        const view = new Float32Array(this._wglUnifromBlockData);
-        view.set(this._camera.projectionMatrix, 0);
-        view.set(this._camera.viewMatrix, 16);
-
-        // upload the latest standard shader data to the gl buffer on gpu
-        this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, this._wglUnifromBlockBuffer);
-        this.gl.bufferSubData(this.gl.UNIFORM_BUFFER, 0, this._wglUnifromBlockData);
+        this._uniformBuffer.cameraProjection = this._camera.projectionMatrix;
+        this._uniformBuffer.cameraView = this._camera.viewMatrix;
     }
 
     private prepareDraw(root: Node) {
@@ -80,6 +69,9 @@ export class Renderer {
     public drawScene(node: Node) {
         this.prepareDraw(node);
 
+        // set the standard shader data in the local buffer
+        this._uniformBuffer.updateGpuBuffer();
+
         this._drawCalls.forEach((drawables: Array<DrawCall>, shader: Shader) => {
             this._drawList(shader, drawables);
         })
@@ -94,7 +86,6 @@ export class Renderer {
         this.gl.uniformBlockBinding(shader.program, shader.blockIndex, 0);
 
         for (const drawCall of drawCalls) {
-            // TODO pass the mvp matrix
             mat4.copy(this._wglMvpMatrixBuffer, drawCall.matrix);
             this.gl.uniformMatrix4fv(shader.mvpLocation, false, this._wglMvpMatrixBuffer);
 
