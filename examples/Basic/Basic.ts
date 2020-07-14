@@ -5,6 +5,8 @@ import {Arcball} from "../../src/behaviors/Arcball.js";
 import {Material} from "../../src/Material.js";
 import {MeshInstance} from "../../src/Mesh.js";
 
+import {KeyboardController} from "./KeyboardController.js"
+
 import * as vec4 from "../../external/gl-matrix/vec4.js"
 import * as vec3 from "../../external/gl-matrix/vec3.js"
 import {PhongParams} from "../../src/shader/Phong.js";
@@ -37,6 +39,8 @@ window.onload = async () => {
     vec3.set(unlitCube.scale, 0.5 * 0.2, 0.5 * 0.2, 0.5 * 0.2);
     vec3.set(unlitCube.position, 1.2, 1.0, 2.0);
 
+    unlitCube.components.light = webGl.createLight(unlitCube);
+    unlitCube.components.behavior = new KeyboardController(unlitCube, webGl);
     unlitCube.components.meshInstance = new MeshInstance(
         cubeObj.components.meshInstance.mesh,
         [new Material(await webGl.defaultShaders.unlit())]

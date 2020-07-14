@@ -1,12 +1,12 @@
-import {Material} from "./Material.js";
 import {Camera} from "./Camera.js";
 import {Node} from "./Node.js";
-
-import * as mat4 from "../external/gl-matrix/mat4.js";
 import {Shader} from "./Shader.js";
 import {dfsWalk} from "./Walk.js";
 import {Primitive} from "./Mesh.js";
 import {UniformBuffer} from "./shader/UniformBuffer.js";
+import {Light} from "./Light.js";
+
+import * as mat4 from "../external/gl-matrix/mat4.js";
 
 class DrawCall {
     public constructor(
@@ -25,6 +25,8 @@ export class Renderer {
     private readonly _wglMvpMatrixBuffer = new Float32Array(16)
 
     private readonly _drawCalls = new Map<Shader, Array<DrawCall>>();
+
+    private lights = new Array<Light>();
 
     constructor(gl: WebGL2RenderingContext) {
         this.gl = gl;
@@ -66,7 +68,21 @@ export class Renderer {
         });
     }
 
+    public createLight(node: Node) {
+        const light = new Light(node);
+        this.lights.push(light);
+        return light;
+    }
+
+    private updateLights() {
+        this._uniformBuffer.lightCount = this.lights.length;
+
+        for (let i = 0; i < this.lights.length; i++)
+            this._uniformBuffer.setLight(i, this.lights[i]);
+    }
+
     public drawScene(node: Node) {
+        this.updateLights();
         this.prepareDraw(node);
 
         // set the standard shader data in the local buffer

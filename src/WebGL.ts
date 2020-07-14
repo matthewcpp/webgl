@@ -5,11 +5,12 @@ import {Node} from "./Node.js";
 import {Camera} from "./Camera.js";
 import {Shader, ShaderData} from "./Shader.js";
 import {DefaultShaders} from "./shader/DefaultShaders.js";
+import {Behavior} from "./behaviors/Behavior.js";
+import {Material} from "./Material.js";
 
 import * as glMatrix from "../external/gl-matrix/common.js";
 import * as vec3 from "../external/gl-matrix/vec3.js"
-import {Behavior} from "./behaviors/Behavior.js";
-import {Material} from "./Material.js";
+
 
 export class WebGl {
     public readonly canvas: HTMLCanvasElement;
@@ -58,8 +59,8 @@ export class WebGl {
     }
 
     public start() {
-        this._lastUpdateTime = performance.now();
         requestAnimationFrame((timestamp: DOMHighResTimeStamp) => {
+            this._lastUpdateTime = timestamp;
             this._mainLoop(timestamp);
         });
     }
@@ -131,6 +132,10 @@ export class WebGl {
         this.textures.set(name, texture);
 
         return texture;
+    }
+
+    public createLight(node: Node){
+        return this._renderer.createLight(node);
     }
 
     private _createDefaultCamera() {

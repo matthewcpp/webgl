@@ -37,12 +37,12 @@ export class Node {
     }
 
     public updateMatrix() {
+        if (Node.freeze)
+            return;
+
         const rotation = quat.create();
         quat.fromEuler(rotation, this.rotation[0], this.rotation[1], this.rotation[2]);
         mat4.fromRotationTranslationScale(this.localMatrix, rotation, this.position, this.scale);
-
-        if (Node.freeze)
-            return;
 
         if (this.parent)
             mat4.multiply(this.worldMatrix, this.parent.worldMatrix, this.localMatrix);

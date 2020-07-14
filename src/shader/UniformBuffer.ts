@@ -4,25 +4,29 @@
     mat4 camera_view;       (16)
     vec4 ambient_light_color (3)
     float ambient_light_intensity (1)
+    Light lights[1]                 (8) * 1
+    int lightCount                  (1)
  */
 
 import * as mat4 from "../../external/gl-matrix/mat4.js"
 import * as vec4 from "../../external/gl-matrix/vec4.js"
+import {Light} from "../Light.js";
 
 export class UniformBuffer {
-    private static size = 144;
+    private static size = 180;
     private static defaultBindIndex = 0;
 
     private _data = new ArrayBuffer(UniformBuffer.size);
-    private _glBuffer: WebGLBuffer;
 
-    private _floatView: Float32Array;
+    private readonly _glBuffer: WebGLBuffer;
+    private readonly _floatView: Float32Array;
+    private readonly _dataView: DataView;
 
     public constructor(
         private gl: WebGL2RenderingContext)
     {
-
         this._floatView = new Float32Array(this._data);
+        this._dataView = new DataView(this._data);
 
         // set up the default uniform buffer that is passed to all shaders
         // note that the default uniform buffer is bound at location 0
@@ -52,5 +56,15 @@ export class UniformBuffer {
 
     public set ambientIntensity(intensity: number) {
         this._floatView[35] = intensity;
+    }
+
+    public setLight(index: number, light: Light) {
+        this._floatView.set(light.node.position, 36);
+        this._floatView.set(light.color, 40);
+    }
+
+    public set lightCount(value: number) {
+        const index = 44 * 4 // 1 light for now;
+        this._dataView.setInt32(index, value);
     }
 }
