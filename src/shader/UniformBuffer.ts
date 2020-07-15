@@ -2,6 +2,7 @@
     Layout:
     mat4 camera_projection; (16)
     mat4 camera_view;       (16)
+    vec4 camera_world_pos   (4)
     vec4 ambient_light_color (3)
     float ambient_light_intensity (1)
     Light lights[1]                 (8) * 1
@@ -49,7 +50,7 @@ export class ObjectUniformBuffer {
 }
 
 export class UniformBuffer {
-    private static size = 180;
+    private static size = 196;
     public static readonly defaultBindIndex = 0;
 
     private _data = new ArrayBuffer(UniformBuffer.size);
@@ -86,22 +87,26 @@ export class UniformBuffer {
         this._floatView.set(viewMatrix, 16);
     }
 
+    public set cameraWorldPos(position: vec4) {
+        this._floatView.set(position, 32)
+    }
+
     public set ambientColor(color: vec4) {
-        this._floatView.set(color, 32);
+        this._floatView.set(color, 36);
     }
 
     public set ambientIntensity(intensity: number) {
-        this._floatView[35] = intensity;
+        this._floatView[39] = intensity;
     }
 
     public setLight(index: number, light: Light) {
-        const lightBaseFloatIndex = 36 + (index * 8);
+        const lightBaseFloatIndex = 40 + (index * 8);
         this._floatView.set(light.node.position, lightBaseFloatIndex);
         this._floatView.set(light.color, lightBaseFloatIndex + 4);
     }
 
     public set lightCount(value: number) {
-        const index = 44 * 4 // 1 light for now;
+        const index = 48 * 4 // 1 light for now;
         this._dataView.setInt32(index, value);
     }
 }

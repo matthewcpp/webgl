@@ -45,6 +45,7 @@ export class Renderer {
 
         this._uniformBuffer.cameraProjection = this._camera.projectionMatrix;
         this._uniformBuffer.cameraView = this._camera.viewMatrix;
+        this._uniformBuffer.cameraWorldPos = this._camera.node.position;
     }
 
     private prepareDraw(root: Node) {

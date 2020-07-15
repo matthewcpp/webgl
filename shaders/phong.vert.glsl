@@ -21,6 +21,7 @@ struct wglLight {
 layout(std140) uniform wglData {
     mat4 camera_projection;
     mat4 camera_view;
+    vec3 camera_world_pos;
     vec3 ambient_light_color;
     float ambient_light_intensity;
     wglLight lights[1];
