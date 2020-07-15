@@ -14,12 +14,15 @@ layout(std140) uniform wglData {
     mat4 camera_view;
 } wgl;
 
-uniform mat4 wgl_model;
+layout(std140) uniform wglModelData {
+    mat4 matrix;
+    mat4 normal_matrix;
+} wgl_model;
 
 out vec4 color;
 
 void main() {
-    gl_Position = wgl.camera_projection * wgl.camera_view * wgl_model * wgl_position;
+    gl_Position = wgl.camera_projection * wgl.camera_view * wgl_model.matrix * wgl_position;
 
     #ifdef WGL_TEXTURE_COORDS
         wgl_tex_coords0 = wgl_tex_coord0;

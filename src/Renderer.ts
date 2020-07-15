@@ -3,10 +3,11 @@ import {Node} from "./Node.js";
 import {Shader} from "./Shader.js";
 import {dfsWalk} from "./Walk.js";
 import {Primitive} from "./Mesh.js";
-import {UniformBuffer} from "./shader/UniformBuffer.js";
+import {ObjectUniformBuffer, UniformBuffer} from "./shader/UniformBuffer.js";
 import {Light} from "./Light.js";
 
 import * as mat4 from "../external/gl-matrix/mat4.js";
+import * as mat3 from "../external/gl-matrix/mat3.js";
 
 class DrawCall {
     public constructor(
@@ -22,7 +23,7 @@ export class Renderer {
     private _camera: Camera = null;
 
     private readonly _uniformBuffer: UniformBuffer;
-    private readonly _wglMvpMatrixBuffer = new Float32Array(16)
+    private readonly _objectUniformBuffer: ObjectUniformBuffer;
 
     private readonly _drawCalls = new Map<Shader, Array<DrawCall>>();
 
@@ -34,6 +35,8 @@ export class Renderer {
         this._uniformBuffer = new UniformBuffer(this.gl);
         this._uniformBuffer.ambientColor = [1.0, 1.0, 1.0, 1.0];
         this._uniformBuffer.ambientIntensity = 0.1;
+
+        this._objectUniformBuffer = new ObjectUniformBuffer(this.gl);
     }
 
     public setCamera(camera: Camera) {
@@ -99,11 +102,18 @@ export class Renderer {
         const shaderAttributes = shader.shaderInterface.attributes();
 
         // send the default data to the newly active shader
-        this.gl.uniformBlockBinding(shader.program, shader.blockIndex, 0);
+        this.gl.uniformBlockBinding(shader.program, shader.globalBlockIndex, UniformBuffer.defaultBindIndex);
+        this.gl.uniformBlockBinding(shader.program, shader.objectBlockIndex, ObjectUniformBuffer.defaultBindIndex);
+
+        const normalMatrix = mat4.create();
 
         for (const drawCall of drawCalls) {
-            mat4.copy(this._wglMvpMatrixBuffer, drawCall.matrix);
-            this.gl.uniformMatrix4fv(shader.mvpLocation, false, this._wglMvpMatrixBuffer);
+            // set the uniform buffer values for this particular object and upload to GPU
+            this._objectUniformBuffer.matrix.set(drawCall.matrix, 0);
+            mat4.invert(normalMatrix, drawCall.matrix);
+            mat4.transpose(normalMatrix, normalMatrix);
+            this._objectUniformBuffer.normalMatrix.set(normalMatrix, 0);
+            this._objectUniformBuffer.updateGpuBuffer();
 
             shader.shaderInterface.push(shader.program, this.gl, drawCall.params);
 

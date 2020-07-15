@@ -12,9 +12,45 @@ import * as mat4 from "../../external/gl-matrix/mat4.js"
 import * as vec4 from "../../external/gl-matrix/vec4.js"
 import {Light} from "../Light.js";
 
+export class ObjectUniformBuffer {
+    private static size = (16 + 16) * 4;
+    public static readonly defaultBindIndex = 1;
+
+    private _data = new ArrayBuffer(ObjectUniformBuffer.size);
+    private readonly _glBuffer: WebGLBuffer;
+
+    private readonly _matrixView: Float32Array;
+    private readonly _normalMatrixView: Float32Array;
+
+    public constructor(
+        private gl: WebGL2RenderingContext)
+    {
+        this._matrixView = new Float32Array(this._data, 0, 16);
+        this._normalMatrixView = new Float32Array(this._data, 16 * 4, 16);
+
+        this._glBuffer = this.gl.createBuffer();
+        gl.bindBuffer(gl.UNIFORM_BUFFER, this._glBuffer);
+        gl.bufferData(gl.UNIFORM_BUFFER, this._data, gl.DYNAMIC_DRAW);
+        gl.bindBufferRange(gl.UNIFORM_BUFFER, ObjectUniformBuffer.defaultBindIndex, this._glBuffer, 0, this._data.byteLength);
+    }
+
+    public updateGpuBuffer(){
+        this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, this._glBuffer);
+        this.gl.bufferSubData(this.gl.UNIFORM_BUFFER, 0, this._data);
+    }
+
+    public get matrix() {
+        return this._matrixView;
+    }
+
+    public get normalMatrix() {
+        return this._normalMatrixView;
+    }
+}
+
 export class UniformBuffer {
     private static size = 180;
-    private static defaultBindIndex = 0;
+    public static readonly defaultBindIndex = 0;
 
     private _data = new ArrayBuffer(UniformBuffer.size);
 
@@ -59,8 +95,9 @@ export class UniformBuffer {
     }
 
     public setLight(index: number, light: Light) {
-        this._floatView.set(light.node.position, 36);
-        this._floatView.set(light.color, 40);
+        const lightBaseFloatIndex = 36 + (index * 8);
+        this._floatView.set(light.node.position, lightBaseFloatIndex);
+        this._floatView.set(light.color, lightBaseFloatIndex + 4);
     }
 
     public set lightCount(value: number) {
