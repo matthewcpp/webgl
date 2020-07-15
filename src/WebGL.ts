@@ -55,6 +55,7 @@ export class WebGl {
         this.gl.depthFunc(this.gl.LEQUAL);
 
         this._createDefaultCamera();
+        Texture.createDefault(this.gl);
         this.defaultMaterial = new Material(await this.defaultShaders.unlit());
     }
 
@@ -123,12 +124,23 @@ export class WebGl {
         return mesh;
     }
 
-    public createTexture(name: string, image: HTMLImageElement) {
+    public createTextureFromImage(name: string, image: HTMLImageElement) {
         if (this.textures.has(name)) {
             throw new Error(`Texture with ${name} already exists.`);
         }
 
-        const texture = Texture.create(this.gl, image);
+        const texture = Texture.createFromImage(this.gl, image);
+        this.textures.set(name, texture);
+
+        return texture;
+    }
+
+    public createTextureFromRGBAData(name: string, width: number, height: number, data: ArrayBufferView) {
+        if (this.textures.has(name)) {
+            throw new Error(`Texture with ${name} already exists.`);
+        }
+
+        const texture = Texture.createFromRGBAData(this.gl, width, height, data);
         this.textures.set(name, texture);
 
         return texture;

@@ -1,7 +1,7 @@
 import {WebGl} from "../WebGL.js";
 import {downloadShaderSource} from "../Util.js";
 import {UnlitShader, UnlitTexturedShader} from "./Unlit.js";
-import {PhongShader} from "./Phong.js";
+import {PhongShader, PhongTexturedShader} from "./Phong.js";
 
 export class DefaultShaders {
     public baseUrl = "/shaders";
@@ -26,7 +26,7 @@ export class DefaultShaders {
             return this._webGl.shaders.get(name);
 
         const shaderData = await downloadShaderSource(`${this.baseUrl}/unlit`);
-        shaderData.preprocessorDefines.push("#define WGL_TEXTURE_COORDS")
+        shaderData.preprocessorDefines.push("#define WGL_TEXTURE_COORDS");
         shaderData.shaderInterface = new UnlitTexturedShader();
 
         return this._webGl.createShader(name, shaderData);
@@ -39,6 +39,18 @@ export class DefaultShaders {
 
         const shaderData = await downloadShaderSource(`${this.baseUrl}/phong`);
         shaderData.shaderInterface = new PhongShader();
+
+        return this._webGl.createShader(name, shaderData);
+    }
+
+    public async phongTextured() {
+        const name = "__default_phong_textured__";
+        if (this._webGl.shaders.has(name))
+            return this._webGl.shaders.get(name);
+
+        const shaderData = await downloadShaderSource(`${this.baseUrl}/phong`);
+        shaderData.preprocessorDefines.push("#define WGL_TEXTURE_COORDS");
+        shaderData.shaderInterface = new PhongTexturedShader();
 
         return this._webGl.createShader(name, shaderData);
     }

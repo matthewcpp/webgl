@@ -6,8 +6,8 @@ precision mediump float;
 precision mediump int;
 
 #ifdef WGL_TEXTURE_COORDS
-in vec2 tex_coords0;
-uniform sampler2D sampler0;
+in vec2 wgl_tex_coords0;
+uniform sampler2D diffuse_sampler;
 #endif
 
 struct wglLight {
@@ -52,13 +52,13 @@ void main() {
     float spec = pow(max(dot(view_dir, reflect_dir), 0.0), shininess);
     vec4 specular = vec4(specular_strength * spec * wgl.lights[0].color, 1.0f);
 
-    // combine ambient, lighting diffuse, and object diffuse color
-    vec4 base_color = (ambient_color + light_diffuse + specular) * diffuse_color;
-
+    vec4 object_diffuse = diffuse_color;
     #ifdef WGL_TEXTURE_COORDS
-    finalColor = texture(sampler0, tex_coords0) * base_color;
-    #else
-    finalColor = base_color;
+    object_diffuse *= texture(diffuse_sampler, wgl_tex_coords0);
     #endif
+
+    // combine ambient, lighting diffuse, and object diffuse color
+    finalColor = (ambient_color + light_diffuse + specular) * object_diffuse;
+
 }
 

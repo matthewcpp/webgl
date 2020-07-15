@@ -9,10 +9,12 @@ import {KeyboardController} from "./KeyboardController.js"
 
 import * as vec4 from "../../external/gl-matrix/vec4.js"
 import * as vec3 from "../../external/gl-matrix/vec3.js"
-import {PhongParams} from "../../src/shader/Phong.js";
+import {PhongParams, PhongTexturedParams} from "../../src/shader/Phong.js";
+import {downloadImage} from "../../src/Util.js";
 
 
 let webGl: WebGl = null;
+
 
 window.onload = async () => {
     let glCanvas = document.querySelector("#gl-canvas") as HTMLCanvasElement;
@@ -29,9 +31,12 @@ window.onload = async () => {
     vec3.set(cubeObj.scale, 0.5, 0.5, 0.5);
     cubeObj.updateMatrix();
 
-    const phongMaterial = new Material(await webGl.defaultShaders.phong());
-    const phongParams = phongMaterial.params as PhongParams;
-    vec4.set(phongParams.diffuseColor, 1.0, 0.5, 0.31, 1.0);
+    const crateTexture = webGl.createTextureFromImage("crate", await downloadImage("/models/Cube/Cube_Crate.png"));
+
+    const phongMaterial = new Material(await webGl.defaultShaders.phongTextured());
+    const phongParams = phongMaterial.params as PhongTexturedParams;
+    phongParams.diffuseTexture = crateTexture;
+    //vec4.set(phongParams.diffuseColor, 1.0, 0.5, 0.31, 1.0);
 
     cubeObj.components.meshInstance.materials[0] = phongMaterial;
 

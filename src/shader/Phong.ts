@@ -1,5 +1,6 @@
 import {DefaultAttributeLocations, ShaderInterface} from "../Shader.js";
 import * as vec4 from "../../external/gl-matrix/vec4.js";
+import {Texture} from "../Texture.js";
 
 export interface PhongParams {
     diffuseColor: vec4;
@@ -10,9 +11,9 @@ export interface PhongParams {
 export class PhongShader implements ShaderInterface {
     private static _vertexAttributes = [DefaultAttributeLocations.Position, DefaultAttributeLocations.Normal];
 
-    private _diffuse_color: WebGLUniformLocation;
-    private _specular_strength: WebGLUniformLocation;
-    private _shininess: WebGLUniformLocation;
+    protected _diffuse_color: WebGLUniformLocation;
+    protected _specular_strength: WebGLUniformLocation;
+    protected _shininess: WebGLUniformLocation;
 
     public init(program: WebGLProgram, gl: WebGL2RenderingContext) {
         this._diffuse_color = gl.getUniformLocation(program, "diffuse_color");
@@ -49,5 +50,49 @@ export class PhongShader implements ShaderInterface {
             specularStrength: params.specularStrength,
             shininess: params.shininess
         };
+    }
+}
+
+export interface PhongTexturedParams extends PhongParams{
+    diffuseTexture: WebGLTexture;
+}
+
+export class PhongTexturedShader extends PhongShader {
+    private static _texuredVertexAttributes = [DefaultAttributeLocations.Position, DefaultAttributeLocations.Normal, DefaultAttributeLocations.TexCoord0];
+
+    private _diffuse_sampler: WebGLUniformLocation;
+
+    public attributes() : Array<number> {
+        return PhongTexturedShader._texuredVertexAttributes;
+    }
+
+    public init(program: WebGLProgram, gl: WebGL2RenderingContext) {
+        super.init(program, gl);
+
+        this._diffuse_sampler = gl.getUniformLocation(program, "diffuse_sampler");
+        if (this._diffuse_sampler == null)
+            throw new Error("Unable to get all uniform locations in phong shader");
+    }
+
+    public push(program: WebGLProgram, gl: WebGL2RenderingContext, params: Object): void {
+        super.push(program, gl, params);
+
+        const phongParams = params as PhongTexturedParams;
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, phongParams.diffuseTexture);
+        gl.uniform1i(this._diffuse_sampler, 0);
+    }
+
+    createParams(): Object {
+        const params = super.createParams() as PhongTexturedParams;
+        params.diffuseTexture = Texture.defaultTexture;
+        return params;
+    }
+
+    copyParams(src: Object): Object {
+        const srcParams = src as PhongTexturedParams
+        const copiedParams = super.copyParams(src) as PhongTexturedParams;
+        copiedParams.diffuseTexture = srcParams.diffuseTexture
+        return copiedParams;
     }
 }
