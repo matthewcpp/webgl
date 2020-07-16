@@ -55,12 +55,14 @@ export class PhongShader implements ShaderInterface {
 
 export interface PhongTexturedParams extends PhongParams{
     diffuseTexture: WebGLTexture;
+    sepcularMap: WebGLTexture;
 }
 
 export class PhongTexturedShader extends PhongShader {
     private static _texuredVertexAttributes = [DefaultAttributeLocations.Position, DefaultAttributeLocations.Normal, DefaultAttributeLocations.TexCoord0];
 
     private _diffuse_sampler: WebGLUniformLocation;
+    private _specular_sampler: WebGLUniformLocation;
 
     public attributes() : Array<number> {
         return PhongTexturedShader._texuredVertexAttributes;
@@ -70,7 +72,9 @@ export class PhongTexturedShader extends PhongShader {
         super.init(program, gl);
 
         this._diffuse_sampler = gl.getUniformLocation(program, "diffuse_sampler");
-        if (this._diffuse_sampler == null)
+        this._specular_sampler = gl.getUniformLocation(program, "specular_sampler");
+
+        if (this._diffuse_sampler == null || this._specular_sampler == null)
             throw new Error("Unable to get all uniform locations in phong shader");
     }
 
@@ -81,11 +85,17 @@ export class PhongTexturedShader extends PhongShader {
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, phongParams.diffuseTexture);
         gl.uniform1i(this._diffuse_sampler, 0);
+
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, phongParams.sepcularMap);
+        gl.uniform1i(this._specular_sampler, 1);
     }
 
     createParams(): Object {
         const params = super.createParams() as PhongTexturedParams;
         params.diffuseTexture = Texture.defaultTexture;
+        params.sepcularMap = Texture.defaultTexture;
+
         return params;
     }
 
@@ -93,6 +103,8 @@ export class PhongTexturedShader extends PhongShader {
         const srcParams = src as PhongTexturedParams
         const copiedParams = super.copyParams(src) as PhongTexturedParams;
         copiedParams.diffuseTexture = srcParams.diffuseTexture
+        copiedParams.sepcularMap = srcParams.sepcularMap;
+
         return copiedParams;
     }
 }
