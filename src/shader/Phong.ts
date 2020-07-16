@@ -56,6 +56,7 @@ export class PhongShader implements ShaderInterface {
 export interface PhongTexturedParams extends PhongParams{
     diffuseTexture: WebGLTexture;
     sepcularMap: WebGLTexture;
+    emissionMap: WebGLTexture;
 }
 
 export class PhongTexturedShader extends PhongShader {
@@ -63,6 +64,7 @@ export class PhongTexturedShader extends PhongShader {
 
     private _diffuse_sampler: WebGLUniformLocation;
     private _specular_sampler: WebGLUniformLocation;
+    private _emission_sampler: WebGLUniformLocation;
 
     public attributes() : Array<number> {
         return PhongTexturedShader._texuredVertexAttributes;
@@ -73,6 +75,7 @@ export class PhongTexturedShader extends PhongShader {
 
         this._diffuse_sampler = gl.getUniformLocation(program, "diffuse_sampler");
         this._specular_sampler = gl.getUniformLocation(program, "specular_sampler");
+        this._emission_sampler = gl.getUniformLocation(program, "emission_sampler");
 
         if (this._diffuse_sampler == null || this._specular_sampler == null)
             throw new Error("Unable to get all uniform locations in phong shader");
@@ -89,12 +92,17 @@ export class PhongTexturedShader extends PhongShader {
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, phongParams.sepcularMap);
         gl.uniform1i(this._specular_sampler, 1);
+
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, phongParams.emissionMap);
+        gl.uniform1i(this._emission_sampler, 2);
     }
 
     createParams(): Object {
         const params = super.createParams() as PhongTexturedParams;
-        params.diffuseTexture = Texture.defaultTexture;
-        params.sepcularMap = Texture.defaultTexture;
+        params.diffuseTexture = Texture.defaultWhite;
+        params.sepcularMap = Texture.defaultWhite;
+        params.emissionMap = Texture.defaultBlack;
 
         return params;
     }
@@ -104,6 +112,7 @@ export class PhongTexturedShader extends PhongShader {
         const copiedParams = super.copyParams(src) as PhongTexturedParams;
         copiedParams.diffuseTexture = srcParams.diffuseTexture
         copiedParams.sepcularMap = srcParams.sepcularMap;
+        copiedParams.emissionMap = srcParams.emissionMap;
 
         return copiedParams;
     }

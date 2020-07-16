@@ -9,6 +9,7 @@ precision mediump int;
 in vec2 wgl_tex_coords0;
 uniform sampler2D diffuse_sampler;
 uniform sampler2D specular_sampler;
+uniform sampler2D emission_sampler;
 #endif
 
 struct wglLight {
@@ -50,7 +51,7 @@ void main() {
     vec3 norm = normalize(normal);
     vec3 light_dir = normalize(wgl.lights[0].position - frag_pos);
     float diff = max(dot(norm, light_dir), 0.0f);
-    vec4 light_diffuse_color = vec4(diff * wgl.lights[0].color, 1.0) * object_diffuse_color;
+    vec4 light_diffuse_color = vec4(diff * wgl.lights[0].color, 1.0f) * object_diffuse_color;
 
     // calculate specular
     vec3 view_dir = normalize(wgl.camera_world_pos - frag_pos);
@@ -62,8 +63,13 @@ void main() {
     specular_color *= texture(specular_sampler, wgl_tex_coords0);
     #endif
 
-    // combine ambient, lighting diffuse, and object diffuse color
-    finalColor = ambient_color + light_diffuse_color + specular_color;
+    // calculate emission
+    #ifdef WGL_TEXTURE_COORDS
+    vec4 emission = texture(emission_sampler, wgl_tex_coords0);
+    #else
+    vec4 emission = vec4(0.0f);
+    #endif
 
+    finalColor = ambient_color + light_diffuse_color + specular_color + emission;
 }
 

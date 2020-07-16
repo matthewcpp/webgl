@@ -1,8 +1,10 @@
 export class Texture {
-    public static defaultTexture: WebGLTexture = null;
+    public static defaultWhite: WebGLTexture = null;
+    public static defaultBlack: WebGLTexture = null;
 
     public static createDefault(gl: WebGL2RenderingContext) {
-        Texture.defaultTexture = Texture.createFromRGBAData(gl, 1, 1, new Uint8Array([255, 255, 255, 255]));
+        Texture.defaultWhite = Texture.createFromRGBAData(gl, 1, 1, new Uint8Array([255, 255, 255, 255]));
+        Texture.defaultBlack = Texture.createFromRGBAData(gl, 1, 1, new Uint8Array([0, 0, 0, 255]));
     }
     public static createFromImage(gl: WebGL2RenderingContext, image: HTMLImageElement): WebGLTexture {
         const texture = gl.createTexture();
