@@ -10,6 +10,7 @@ import {Material} from "./Material.js";
 
 import * as glMatrix from "../external/gl-matrix/common.js";
 import * as vec3 from "../external/gl-matrix/vec3.js"
+import {LightType} from "./Light.js";
 
 
 export class WebGl {
@@ -146,8 +147,8 @@ export class WebGl {
         return texture;
     }
 
-    public createLight(node: Node){
-        return this._renderer.createLight(node);
+    public createLight(lightType: LightType, node: Node){
+        return this._renderer.createLight(lightType, node);
     }
 
     private _createDefaultCamera() {

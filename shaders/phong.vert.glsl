@@ -15,6 +15,7 @@ out vec2 wgl_tex_coords0;
 
 struct wglLight {
     vec3 position;
+    vec3 direction;
     vec3 color;
 };
 

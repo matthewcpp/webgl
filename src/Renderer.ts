@@ -4,7 +4,7 @@ import {Shader} from "./Shader.js";
 import {dfsWalk} from "./Walk.js";
 import {Primitive} from "./Mesh.js";
 import {ObjectUniformBuffer, UniformBuffer} from "./shader/UniformBuffer.js";
-import {Light} from "./Light.js";
+import {Light, LightType} from "./Light.js";
 
 import * as mat4 from "../external/gl-matrix/mat4.js";
 import * as mat3 from "../external/gl-matrix/mat3.js";
@@ -72,8 +72,8 @@ export class Renderer {
         });
     }
 
-    public createLight(node: Node) {
-        const light = new Light(node);
+    public createLight(lightType: LightType, node: Node) {
+        const light = new Light(lightType, node);
         this.lights.push(light);
         return light;
     }
