@@ -10,9 +10,16 @@ out vec2 wgl_tex_coords0;
 #endif
 
 struct wglLight {
+    int type;
+    float constant_attenuation;
+    float linear_attenuation;
+    float quadratic_attenuation;
     vec3 position;
+    float cone_inner_angle;
     vec3 direction;
+    float cone_outer_angle;
     vec3 color;
+    float align;
 };
 
 layout(std140) uniform wglData {
@@ -22,7 +29,7 @@ layout(std140) uniform wglData {
     vec3 ambient_light_color;
     float ambient_light_intensity;
     wglLight lights[1];
-    uint light_count;
+    int light_count;
 } wgl;
 
 layout(std140) uniform wglModelData {

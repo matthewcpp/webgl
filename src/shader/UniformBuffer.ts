@@ -46,15 +46,15 @@ export class ObjectUniformBuffer {
     vec4 camera_world_pos   (4)
     vec4 ambient_light_color (3)
     float ambient_light_intensity (1)
-    Light lights[1]                 (12) * 1
+    Light lights[1]                 (16) * 1
     int lightCount                  (1)
  */
 
 export class UniformBuffer {
     public static readonly defaultBindIndex = 0;
 
-    private static baseDataFloatCount = 40;
-    private static lightFloatSize = 12;
+    private static baseDataSize = 40 * 4;
+    private static lightStructSize = 16 * 4;
     private static maxLightCount = 1;
 
     private readonly _data: ArrayBuffer;
@@ -79,8 +79,7 @@ export class UniformBuffer {
     }
 
     public get sizeInBytes() {
-        const floatCount = UniformBuffer.baseDataFloatCount + (UniformBuffer.lightFloatSize * UniformBuffer.maxLightCount) + 4; // light count
-        return floatCount * 4;
+        return UniformBuffer.baseDataSize + (UniformBuffer.lightStructSize * UniformBuffer.maxLightCount) + 4; // light count
     }
 
     // upload the latest standard shader data to the gl buffer on gpu
@@ -111,15 +110,24 @@ export class UniformBuffer {
 
 
     public setLight(index: number, light: Light) {
-        const lightBaseFloatIndex = UniformBuffer.baseDataFloatCount + (index * UniformBuffer.lightFloatSize);
+        const lightBaseByteIndex = UniformBuffer.baseDataSize + (index * UniformBuffer.lightStructSize);
+        const lightBaseFloatIndex =  lightBaseByteIndex / 4;
 
-        this._floatView.set(light.node.position, lightBaseFloatIndex);
-        this._floatView.set(light.direction, lightBaseFloatIndex + 4);
-        this._floatView.set(light.color, lightBaseFloatIndex + 8);
+
+        this._dataView.setInt32(lightBaseByteIndex, light.type, true);
+        this._dataView.setFloat32(lightBaseByteIndex + 4, light.constantAttenuation, true);
+        this._dataView.setFloat32(lightBaseByteIndex + 8, light.linearAttenuation, true);
+        this._dataView.setFloat32(lightBaseByteIndex + 12, light.quadraticAttenuation, true);
+        this._dataView.setFloat32(lightBaseByteIndex + 28, light.coneInnerAngle, true);
+        this._dataView.setFloat32(lightBaseByteIndex + 44, light.coneOuterAngle, true);
+
+        this._floatView.set(light.node.position, lightBaseFloatIndex+ 4);
+        this._floatView.set(light.direction, lightBaseFloatIndex + 8);
+        this._floatView.set(light.color, lightBaseFloatIndex + 12);
     }
 
     public set lightCount(value: number) {
-        const index = (UniformBuffer.baseDataFloatCount + (UniformBuffer.maxLightCount * UniformBuffer.lightFloatSize)) * 4;
-        this._dataView.setInt32(index, value);
+        const index = UniformBuffer.baseDataSize + (UniformBuffer.maxLightCount * UniformBuffer.lightStructSize);
+        this._dataView.setInt32(index, 1, true);
     }
 }

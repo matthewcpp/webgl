@@ -17,9 +17,16 @@ const int WGL_LIGHT_POINT = 1;
 const int WGL_LIGHT_SPOT = 2;
 
 struct wglLight {
+    int type;
+    float constant_attenuation;
+    float linear_attenuation;
+    float quadratic_attenuation;
     vec3 position;
+    float cone_inner_angle;
     vec3 direction;
+    float cone_outer_angle;
     vec3 color;
+    float align;
 };
 
 layout(std140) uniform wglData {
@@ -29,7 +36,7 @@ layout(std140) uniform wglData {
     vec3 ambient_light_color;
     float ambient_light_intensity;
     wglLight lights[1];
-    uint light_count;
+    int light_count;
 } wgl;
 
 out vec4 finalColor;
@@ -43,12 +50,8 @@ in vec3 normal;
 in vec3 frag_pos;
 
 vec4 directionalLight(wglLight light, vec4 object_diffuse_color) {
-    // calculate ambient
-    vec4 ambient_color = vec4(wgl.ambient_light_color * wgl.ambient_light_intensity, 1.0f) * object_diffuse_color;
-
     // calculate diffuse
     vec3 norm = normalize(normal);
-    //vec3 light_dir = normalize(wgl.lights[0].position - frag_pos);
     vec3 light_dir = normalize(-light.direction); // note that direction is specified from source, but our calculations following assume light dir is to the source.
     float diff = max(dot(norm, light_dir), 0.0f);
     vec4 light_diffuse_color = vec4(diff * wgl.lights[0].color, 1.0f) * object_diffuse_color;
@@ -63,14 +66,7 @@ vec4 directionalLight(wglLight light, vec4 object_diffuse_color) {
     specular_color *= texture(specular_sampler, wgl_tex_coords0);
     #endif
 
-    // calculate emission
-    #ifdef WGL_TEXTURE_COORDS
-    vec4 emission = texture(emission_sampler, wgl_tex_coords0);
-    #else
-    vec4 emission = vec4(0.0f);
-    #endif
-
-    return ambient_color + light_diffuse_color + specular_color + emission;
+    return light_diffuse_color + specular_color;
 }
 
 void main() {
@@ -79,6 +75,26 @@ void main() {
     object_diffuse_color *= texture(diffuse_sampler, wgl_tex_coords0);
     #endif
 
-    finalColor = directionalLight(wgl.lights[0], object_diffuse_color);
+    // calculate ambient
+    vec4 frag_color = vec4(wgl.ambient_light_color * wgl.ambient_light_intensity, 1.0f) * object_diffuse_color;
+
+    for (int i = 0; i < wgl.light_count; i++) {
+        switch(wgl.lights[i].type) {
+            case WGL_LIGHT_DIRECTIONAL:
+                frag_color += directionalLight(wgl.lights[i], object_diffuse_color);
+                break;
+        }
+    }
+
+    // calculate emission
+    #ifdef WGL_TEXTURE_COORDS
+    vec4 emission = texture(emission_sampler, wgl_tex_coords0);
+    #else
+    vec4 emission = vec4(0.0f);
+    #endif
+
+    frag_color += emission;
+
+    finalColor = frag_color;
 }
 
