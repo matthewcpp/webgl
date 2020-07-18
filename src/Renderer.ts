@@ -7,7 +7,6 @@ import {ObjectUniformBuffer, UniformBuffer} from "./shader/UniformBuffer.js";
 import {Light, LightType} from "./Light.js";
 
 import * as mat4 from "../external/gl-matrix/mat4.js";
-import * as mat3 from "../external/gl-matrix/mat3.js";
 
 class DrawCall {
     public constructor(
@@ -73,6 +72,9 @@ export class Renderer {
     }
 
     public createLight(lightType: LightType, node: Node) {
+        if (this.lights.length === UniformBuffer.maxLightCount)
+            throw new Error("Maximum number of lights have already been created.");
+
         const light = new Light(lightType, node);
         this.lights.push(light);
         return light;

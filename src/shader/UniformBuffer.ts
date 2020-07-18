@@ -55,7 +55,7 @@ export class UniformBuffer {
 
     private static baseDataSize = 40 * 4;
     private static lightStructSize = 16 * 4;
-    private static maxLightCount = 1;
+    static maxLightCount = 5;
 
     private readonly _data: ArrayBuffer;
 
@@ -115,9 +115,8 @@ export class UniformBuffer {
 
 
         this._dataView.setInt32(lightBaseByteIndex, light.type, true);
-        this._dataView.setFloat32(lightBaseByteIndex + 4, light.constantAttenuation, true);
-        this._dataView.setFloat32(lightBaseByteIndex + 8, light.linearAttenuation, true);
-        this._dataView.setFloat32(lightBaseByteIndex + 12, light.quadraticAttenuation, true);
+        this._dataView.setFloat32(lightBaseByteIndex + 4, light.range, true);
+        this._dataView.setFloat32(lightBaseByteIndex + 8, light.intensity, true);
         this._dataView.setFloat32(lightBaseByteIndex + 28, light.coneInnerAngle, true);
         this._dataView.setFloat32(lightBaseByteIndex + 44, light.coneOuterAngle, true);
 
@@ -128,6 +127,6 @@ export class UniformBuffer {
 
     public set lightCount(value: number) {
         const index = UniformBuffer.baseDataSize + (UniformBuffer.maxLightCount * UniformBuffer.lightStructSize);
-        this._dataView.setInt32(index, 1, true);
+        this._dataView.setInt32(index, value, true);
     }
 }

@@ -11,9 +11,8 @@ export enum LightType {
 export class Light {
     public color = vec3.fromValues(1.0, 1.0, 1.0);
 
-    public constantAttenuation = 1.0;
-    public linearAttenuation = 0.7;
-    public quadraticAttenuation = 1.8
+    public range = 10.0;
+    public intensity = 1.0;
 
     public coneInnerAngle = 12.5;
     public coneOuterAngle = 17.5;
