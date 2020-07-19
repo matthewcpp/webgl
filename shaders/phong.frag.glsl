@@ -19,9 +19,9 @@ struct wglLight {
     float intensity;
     float align1;
     vec3 position;
-    float cone_inner_angle;
+    float spot_inner_angle;
     vec3 direction;
-    float cone_outer_angle;
+    float spot_outer_angle;
     vec3 color;
     float align2;
 };
@@ -83,18 +83,34 @@ vec4 directionalLight(wglLight light, vec4 object_diffuse_color) {
     return diffuse_color + calculateSpecular(light, light_dir);
 }
 
-// http://hyperphysics.phy-astr.gsu.edu/hbase/vision/isql.html
+
 vec4 pointLight(wglLight light, vec4 object_diffuse_color) {
     float distance = distance(light.position, frag_pos);
-    float intensity = light.range / (4.0f * M_PI * (distance * distance));
-    intensity *= light.intensity;
+
+    // approximate inverse square law
+    float attenuation = clamp(1.0 - (distance * distance) / (light.range * light.range), 0.0, 1.0);
+    attenuation *= attenuation;
+
+    //float b = 1.0 / (light.range * light.range * 0.01);
+    //attenuation = 1.0 / (1.0 + (b * distance * distance));
 
     vec3 norm = normalize(normal);
     vec3 light_dir = normalize(light.position - frag_pos);
     float diff = max(dot(norm, light_dir), 0.0f);
-    vec4 diffuse_color = vec4(diff * light.color, 1.0f) * object_diffuse_color * intensity;
+    vec4 diffuse_color = vec4(diff * light.color * light.intensity, 1.0f) * object_diffuse_color;
 
-    return diffuse_color + calculateSpecular(light, light_dir) * intensity;
+    return (diffuse_color + calculateSpecular(light, light_dir)) * attenuation;
+}
+
+vec4 spotLight(wglLight light, vec4 object_diffuse_color) {
+    vec3 frag_to_light = normalize(light.position - frag_pos);
+    float theta = dot(frag_to_light, -light.direction);
+
+    float angle = acos(theta) * 180.0 / M_PI;
+    float epsilon = light.spot_inner_angle - light.spot_outer_angle;
+    float spot_modifier = smoothstep(0.0, 1.0, (angle - light.spot_outer_angle) / epsilon);
+
+    return pointLight(light, object_diffuse_color) * spot_modifier;
 }
 
 void main() {
@@ -115,6 +131,10 @@ void main() {
 
             case WGL_LIGHT_POINT:
                 frag_color += pointLight(wgl.lights[i], object_diffuse_color);
+                break;
+
+            case WGL_LIGHT_SPOT:
+                frag_color += spotLight(wgl.lights[i], object_diffuse_color);
                 break;
         }
     }

@@ -117,8 +117,8 @@ export class UniformBuffer {
         this._dataView.setInt32(lightBaseByteIndex, light.type, true);
         this._dataView.setFloat32(lightBaseByteIndex + 4, light.range, true);
         this._dataView.setFloat32(lightBaseByteIndex + 8, light.intensity, true);
-        this._dataView.setFloat32(lightBaseByteIndex + 28, light.coneInnerAngle, true);
-        this._dataView.setFloat32(lightBaseByteIndex + 44, light.coneOuterAngle, true);
+        this._dataView.setFloat32(lightBaseByteIndex + 28, light.spotInnerAngle, true);
+        this._dataView.setFloat32(lightBaseByteIndex + 44, light.spotOuterAngle, true);
 
         this._floatView.set(light.node.position, lightBaseFloatIndex+ 4);
         this._floatView.set(light.direction, lightBaseFloatIndex + 8);

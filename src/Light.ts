@@ -14,8 +14,8 @@ export class Light {
     public range = 10.0;
     public intensity = 1.0;
 
-    public coneInnerAngle = 12.5;
-    public coneOuterAngle = 17.5;
+    public spotInnerAngle = 12.5;
+    public spotOuterAngle = 45.0;
 
     public constructor(
         public type: LightType,

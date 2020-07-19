@@ -10,6 +10,17 @@ export abstract class Behavior {
     }
 
     abstract update(): void;
+}
 
+export class FuncBehavior extends Behavior{
+    private readonly _func: () => void;
 
+    public constructor(webgl: WebGl, func: () => void) {
+        super(webgl);
+        this._func = func;
+    }
+
+    public update(): void {
+        this._func();
+    }
 }

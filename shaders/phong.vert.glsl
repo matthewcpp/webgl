@@ -19,9 +19,9 @@ struct wglLight {
     float intensity;
     float align1;
     vec3 position;
-    float cone_inner_angle;
+    float spot_inner_angle;
     vec3 direction;
-    float cone_outer_angle;
+    float spot_outer_angle;
     vec3 color;
     float align2;
 };
