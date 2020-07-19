@@ -31,25 +31,25 @@ export class ShaderData {
 export class Shader {
     public constructor(
         public readonly program: WebGLProgram,
-        public readonly blockIndex: number,
-        public readonly mvpLocation: WebGLUniformLocation,
+        public readonly globalBlockIndex: number,
+        public readonly objectBlockIndex: number,
         public readonly shaderInterface: ShaderInterface,
     ){}
 
     public static create(shaderData: ShaderData, gl: WebGL2RenderingContext) {
         const program = Shader._compileShader(shaderData.vertexSource, shaderData.fragmentSource, shaderData.preprocessorDefines, gl);
 
-        const wglDataIndex = gl.getUniformBlockIndex(program, 'wglData');
-        const wglMvpLocation = gl.getUniformLocation(program, "wgl_mvp");
+        const wglGlobalDataIndex = gl.getUniformBlockIndex(program, 'wglData');
+        const wglObjectDataLocation = gl.getUniformBlockIndex(program, 'wglModelData');
 
-        if (wglDataIndex == -1)
+        if (wglGlobalDataIndex == -1)
             throw new Error(`Unable to find wglData uniform block`);
-        if (wglMvpLocation == null)
-            throw new Error(`Unable to find wgl_mvp uniform`);
+        if (wglObjectDataLocation == -1)
+            throw new Error(`Unable to find wglModelData uniform block`);
 
         shaderData.shaderInterface.init(program, gl);
 
-        return new Shader(program, wglDataIndex, wglMvpLocation, shaderData.shaderInterface);
+        return new Shader(program, wglGlobalDataIndex, wglObjectDataLocation, shaderData.shaderInterface);
     }
 
     private static _shaderDefineStr = "//!WGL_DEFINES";

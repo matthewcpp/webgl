@@ -270,7 +270,7 @@ export class Loader {
     private async _getTexture(index: number) {
         if (!this._textures[index]) {
             const image = this._gltf.images[index];
-            this._textures[index] = this._webgl.createTexture(index.toString(), await downloadImage(this._getFetchUri(image.uri)));
+            this._textures[index] = this._webgl.createTextureFromImage(index.toString(), await downloadImage(this._getFetchUri(image.uri)));
         }
         return this._textures[index];
     }

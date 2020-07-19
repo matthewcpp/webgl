@@ -1,13 +1,15 @@
 import * as vec4 from "../../external/gl-matrix/vec4.js";
-import {ShaderInterface} from "../Shader.js";
+import {DefaultAttributeLocations, ShaderInterface} from "../Shader.js";
 
 export interface UnlitParams {
     color: vec4;
 }
 
 export class UnlitShader implements ShaderInterface{
+    private static _vertexAttributes = [DefaultAttributeLocations.Position];
+
     private _fragColor: WebGLUniformLocation;
-    private static _vertexAttributes = [0];
+
 
     public init(program: WebGLProgram, gl: WebGL2RenderingContext) {
         this._fragColor = gl.getUniformLocation(program, "frag_color");

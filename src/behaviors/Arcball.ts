@@ -39,7 +39,7 @@ export class Arcball extends Behavior {
     }
 
     private _orbit(deltaX: number, deltaY:number) {
-        const rotationAmount = this.rotationSpeed * this.webgl.deltaTime
+        const rotationAmount = this.rotationSpeed * this._webgl.deltaTime
 
         this._rotY += deltaX * rotationAmount;
         this._rotX += deltaY * rotationAmount;

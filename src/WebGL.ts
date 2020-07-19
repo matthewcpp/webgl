@@ -5,11 +5,13 @@ import {Node} from "./Node.js";
 import {Camera} from "./Camera.js";
 import {Shader, ShaderData} from "./Shader.js";
 import {DefaultShaders} from "./shader/DefaultShaders.js";
+import {Behavior} from "./behaviors/Behavior.js";
+import {Material} from "./Material.js";
 
 import * as glMatrix from "../external/gl-matrix/common.js";
 import * as vec3 from "../external/gl-matrix/vec3.js"
-import {Behavior} from "./behaviors/Behavior.js";
-import {Material} from "./Material.js";
+import {LightType} from "./Light.js";
+
 
 export class WebGl {
     public readonly canvas: HTMLCanvasElement;
@@ -54,12 +56,13 @@ export class WebGl {
         this.gl.depthFunc(this.gl.LEQUAL);
 
         this._createDefaultCamera();
+        Texture.createDefault(this.gl);
         this.defaultMaterial = new Material(await this.defaultShaders.unlit());
     }
 
     public start() {
-        this._lastUpdateTime = performance.now();
         requestAnimationFrame((timestamp: DOMHighResTimeStamp) => {
+            this._lastUpdateTime = timestamp;
             this._mainLoop(timestamp);
         });
     }
@@ -122,15 +125,30 @@ export class WebGl {
         return mesh;
     }
 
-    public createTexture(name: string, image: HTMLImageElement) {
+    public createTextureFromImage(name: string, image: HTMLImageElement) {
         if (this.textures.has(name)) {
             throw new Error(`Texture with ${name} already exists.`);
         }
 
-        const texture = Texture.create(this.gl, image);
+        const texture = Texture.createFromImage(this.gl, image);
         this.textures.set(name, texture);
 
         return texture;
+    }
+
+    public createTextureFromRGBAData(name: string, width: number, height: number, data: ArrayBufferView) {
+        if (this.textures.has(name)) {
+            throw new Error(`Texture with ${name} already exists.`);
+        }
+
+        const texture = Texture.createFromRGBAData(this.gl, width, height, data);
+        this.textures.set(name, texture);
+
+        return texture;
+    }
+
+    public createLight(lightType: LightType, node: Node){
+        return this._renderer.createLight(lightType, node);
     }
 
     private _createDefaultCamera() {
