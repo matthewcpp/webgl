@@ -39,17 +39,16 @@ export class ObjectUniformBuffer {
     }
 }
 
-/*
+/**
     Layout:
-    mat4 camera_projection (16)
-    mat4 camera_view       (16)
-    vec4 camera_world_pos   (4)
-    vec4 ambient_light_color (3)
-    float ambient_light_intensity (1)
-    Light lights[1]                 (16) * 1
-    int lightCount                  (1)
+    mat4 camera_projection (64)
+    mat4 camera_view       (64)
+    vec3 camera_world_pos   (12)
+    float ambient_light_intensity (4)
+    vec3 ambient_light_color (12)
+    int lightCount                  (4)
+    Light lights[5]                 (64) * 5
  */
-
 export class UniformBuffer {
     public static readonly defaultBindIndex = 0;
 
@@ -79,7 +78,7 @@ export class UniformBuffer {
     }
 
     public get sizeInBytes() {
-        return UniformBuffer.baseDataSize + (UniformBuffer.lightStructSize * UniformBuffer.maxLightCount) + 4; // light count
+        return UniformBuffer.baseDataSize + (UniformBuffer.lightStructSize * UniformBuffer.maxLightCount);
     }
 
     // upload the latest standard shader data to the gl buffer on gpu
@@ -105,9 +104,12 @@ export class UniformBuffer {
     }
 
     public set ambientIntensity(intensity: number) {
-        this._floatView[39] = intensity;
+        this._dataView.setFloat32(140, intensity, true);
     }
 
+    public set lightCount(value: number) {
+        this._dataView.setInt32(156, value, true);
+    }
 
     public setLight(index: number, light: Light) {
         const lightBaseByteIndex = UniformBuffer.baseDataSize + (index * UniformBuffer.lightStructSize);
@@ -123,10 +125,5 @@ export class UniformBuffer {
         this._floatView.set(light.node.position, lightBaseFloatIndex+ 4);
         this._floatView.set(light.direction, lightBaseFloatIndex + 8);
         this._floatView.set(light.color, lightBaseFloatIndex + 12);
-    }
-
-    public set lightCount(value: number) {
-        const index = UniformBuffer.baseDataSize + (UniformBuffer.maxLightCount * UniformBuffer.lightStructSize);
-        this._dataView.setInt32(index, value, true);
     }
 }

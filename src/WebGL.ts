@@ -108,7 +108,7 @@ export class WebGl {
             throw new Error(`Shader with name: ${name} already exists.`);
         }
 
-        const shader = Shader.create(shaderData, this.gl);
+        const shader = Shader.create(name, shaderData, this.gl);
         this.shaders.set(name, shader);
 
         return shader;

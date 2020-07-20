@@ -36,8 +36,8 @@ export class Shader {
         public readonly shaderInterface: ShaderInterface,
     ){}
 
-    public static create(shaderData: ShaderData, gl: WebGL2RenderingContext) {
-        const program = Shader._compileShader(shaderData.vertexSource, shaderData.fragmentSource, shaderData.preprocessorDefines, gl);
+    public static create(name: string, shaderData: ShaderData, gl: WebGL2RenderingContext) {
+        const program = Shader._compileShader(name, shaderData.vertexSource, shaderData.fragmentSource, shaderData.preprocessorDefines, gl);
 
         const wglGlobalDataIndex = gl.getUniformBlockIndex(program, 'wglData');
         const wglObjectDataLocation = gl.getUniformBlockIndex(program, 'wglModelData');
@@ -53,7 +53,7 @@ export class Shader {
     }
 
     private static _shaderDefineStr = "//!WGL_DEFINES";
-    private static _compileShader(vertexSource: string, fragmentSource: string, preprocessorDefines: string[], gl: WebGL2RenderingContext) {
+    private static _compileShader(name: string, vertexSource: string, fragmentSource: string, preprocessorDefines: string[], gl: WebGL2RenderingContext) {
         if (preprocessorDefines.length > 0) {
             const preprocessorDefinitions = preprocessorDefines.join("\n");
             vertexSource = vertexSource.replace(Shader._shaderDefineStr, preprocessorDefinitions);

@@ -30,10 +30,10 @@ layout(std140) uniform wglData {
     mat4 camera_projection;
     mat4 camera_view;
     vec3 camera_world_pos;
-    vec3 ambient_light_color;
     float ambient_light_intensity;
-    wglLight lights[MAX_LIGHTS];
+    vec3 ambient_light_color;
     int light_count;
+    wglLight lights[MAX_LIGHTS];
 } wgl;
 
 layout(std140) uniform wglModelData {
