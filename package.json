@@ -12,6 +12,11 @@
     "http-server": "^0.12.1"
   },
   "scripts": {
-    "postinstall": "node scripts/postinstall.js"
+    "postinstall": "node scripts/postinstall.js",
+    "prepare_shader": "node scripts/prepare_shader.js",
+    "prepare_default_shaders": "node scripts/prepare_default_shaders.js"
+  },
+  "engines": {
+    "node": ">=11.4.0"
   }
 }
