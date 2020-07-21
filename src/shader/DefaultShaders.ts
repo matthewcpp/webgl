@@ -4,7 +4,7 @@ import {UnlitShader, UnlitTexturedShader} from "./Unlit.js";
 import {PhongShader, PhongTexturedShader} from "./Phong.js";
 
 export class DefaultShaders {
-    public baseUrl = "/shaders";
+    public baseUrl = "/dist/shaders";
     public constructor(
         private readonly _webGl: WebGl
     ) {}

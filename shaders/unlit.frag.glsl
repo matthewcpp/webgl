@@ -1,8 +1,9 @@
 #version 300 es
 
-//!WGL_DEFINES
-
 precision mediump float;
+precision mediump int;
+
+#include "wgl.h.glsl"
 
 out vec4 final_color;
 uniform vec4 frag_color;
