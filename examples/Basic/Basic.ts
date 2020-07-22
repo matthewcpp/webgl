@@ -29,90 +29,34 @@ window.onload = async () => {
 
     const loader = new GLTF.Loader(webGl);
     const roots = await loader.load("/models/Cube/Cube.gltf");
+    //const roots = await loader.load("/models/OrientationTest/OrientationTest.gltf");
 
-    const cubeObj = roots[0];
-    vec3.set(cubeObj.scale, 5, 0.1, 5);
-    cubeObj.updateMatrix();
-
-    const crateTexture = webGl.createTextureFromImage("crateDiffuseMap", await downloadImage("/models/Cube/Cube_Crate.png"));
-    const crateSpecularMap = webGl.createTextureFromImage("crateSpecularMap", await downloadImage("/models/Cube/Cube_Specular.png"));
-    const crateEmissionMap = webGl.createTextureFromImage("crateEmissionMap", await downloadImage("/models/Cube/Cube_Emission.jpg"));
-    const phongMaterial = new Material(await webGl.defaultShaders.phongTextured());
-    const phongParams = phongMaterial.params as PhongTexturedParams;
-    phongParams.diffuseTexture = crateTexture;
-    //phongParams.sepcularMap = crateSpecularMap;
-    // phongParams.emissionMap = crateEmissionMap;
-
-    //vec4.set(phongParams.diffuseColor, 1.0, 0.5, 0.31, 1.0);
-
-    cubeObj.components.meshInstance.materials[0] = phongMaterial;
-
-    /*
-    const spotLight = new Node();
-    vec3.set(spotLight.position, 0.0, 5.0, 0.0);
-    vec3.set(spotLight.scale, 0.5 * 0.2, 0.5 * 0.2, 0.5 * 0.2);
-    spotLight.rotation[0] = 90.0;
-    //spotLight.rotation[1] = 20.0;
-    //spotLight.lookAt([0.0,0.0,0.0], spotLight.up());
-    spotLight.updateMatrix();
-
-    spotLight.components.light = webGl.createLight(LightType.Spot, spotLight);
-    spotLight.components.light.intensity = 5.0;
-    spotLight.components.light.color = [1.0, 0.0, 0.0];
-
-    spotLight.components.meshInstance = new MeshInstance(
-        cubeObj.components.meshInstance.mesh,
-        [new Material(await webGl.defaultShaders.unlit())]
-    );
-
-    webGl.rootNode.addChild(spotLight);
-    */
-
-    /*
     const directionalLight = new Node();
-    vec3.set(directionalLight.scale, 0.5 * 0.2, 0.5 * 0.2, 0.5 * 0.2);
-    vec3.set(directionalLight.position, 0.0, 3.0, 0.0);
-    vec3.set(directionalLight.rotation, 130.0, -30.0, 0.0);
-    directionalLight.updateMatrix();
-
     directionalLight.components.light = webGl.createLight(LightType.Directional, directionalLight);
-
-    directionalLight.components.meshInstance = new MeshInstance(
-        cubeObj.components.meshInstance.mesh,
-        [new Material(await webGl.defaultShaders.unlit())]
-    );
-
+    directionalLight.position = [0.0, 3, 0.0];
+    directionalLight.rotation = [50.0, -30.0, 0.0];
+    directionalLight.updateMatrix();
     webGl.rootNode.addChild(directionalLight);
-    */
 
-    const pointLight = new Node();
-    vec3.set(pointLight.scale, 0.5 * 0.2, 0.5 * 0.2, 0.5 * 0.2);
-    //vec3.set(pointLight.position, 1.8350799999999976, 1.3344970000000003, -1.5330249999999976);
-    vec3.set(pointLight.position, 0.0, 1.0, 0.0);
-    pointLight.rotation[0] = 90.0;
-    pointLight.rotation[2] = 30.0;
-    pointLight.updateMatrix();
 
-    pointLight.components.behavior = new KeyboardController(pointLight, webGl);
-    pointLight.components.light = webGl.createLight(LightType.Spot, pointLight);
-    pointLight.components.light.intensity = 3.0;
-    pointLight.components.light.range = 20.0;
-    pointLight.components.light.spotInnerAngle = 12.5;
-    pointLight.components.light.spotOuterAngle = 17.5;
-    pointLight.components.light.color = [0.367, 0.125, 0.45];
+    const parentNode = new Node();
+    parentNode.rotation = [0.0, 10.0, 10.0];
+    parentNode.updateMatrix();
 
-    pointLight.components.meshInstance = new MeshInstance(
-        cubeObj.components.meshInstance.mesh,
-        [new Material(await webGl.defaultShaders.unlit())]
-    );
+    const childNode = new Node();
+    childNode.rotation = [30.0, 10.0, 0.0];
+    childNode.updateMatrix();
 
-    webGl.rootNode.addChild(pointLight);
+    childNode.addChild(roots[0]);
 
-    const pointLightMaterial = pointLight.components.meshInstance.materials[0].params as UnlitParams;
-    vec3.set(pointLightMaterial.color, 0.0, 1.0, 0.0);
+    parentNode.addChild(childNode);
+    webGl.rootNode.addChild(parentNode);
+
+    console.log(childNode.worldMatrix);
+    console.log(childNode.forward());
 
     const arcball = new Arcball(webGl.mainCamera.node, webGl);
-    arcball.setInitial(cubeObj);
+    arcball.setInitial(roots[0]);
     webGl.mainCamera.node.components.behavior = arcball;
 
     webGl.start();

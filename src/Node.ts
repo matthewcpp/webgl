@@ -1,4 +1,6 @@
 import {Components} from "./Components.js";
+import * as MathUtil from  "./MathUtil.js"
+
 import * as vec3 from "../external/gl-matrix/vec3.js";
 import * as quat from "../external/gl-matrix/quat.js";
 import * as mat4 from "../external/gl-matrix/mat4.js";
@@ -22,6 +24,10 @@ export class Node {
     ) {}
 
     public addChild(child: Node) {
+        // remove the child from its parent's children array
+        if (child.parent)
+            child.parent.children.filter((c: Node) => { return c != child; });
+
         child.parent = this;
         this.children.push(child);
 
@@ -40,12 +46,15 @@ export class Node {
         if (Node.freeze)
             return;
 
+        mat4.identity(this.localMatrix);
         const rotation = quat.create();
         quat.fromEuler(rotation, this.rotation[0], this.rotation[1], this.rotation[2]);
         mat4.fromRotationTranslationScale(this.localMatrix, rotation, this.position, this.scale);
 
         if (this.parent)
-            mat4.multiply(this.worldMatrix, this.parent.worldMatrix, this.localMatrix);
+            mat4.multiply(this.worldMatrix, this.localMatrix, this.parent.worldMatrix);
+        else
+            mat4.copy(this.worldMatrix, this.localMatrix);
 
         for (const child of this.children)
             child.updateMatrix();
