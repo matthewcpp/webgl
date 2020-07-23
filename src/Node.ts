@@ -4,6 +4,7 @@ import * as MathUtil from  "./MathUtil.js"
 import * as vec3 from "../external/gl-matrix/vec3.js";
 import * as quat from "../external/gl-matrix/quat.js";
 import * as mat4 from "../external/gl-matrix/mat4.js";
+import {Bounds} from "./Bounds.js";
 
 export class Node {
     public static freeze = false;
@@ -42,6 +43,12 @@ export class Node {
         return this.children.length;
     }
 
+    public setTransformFromMatrix(matrix: mat4) {
+        const rotation = quat.create();
+        MathUtil.extractTRS(matrix, this.position, rotation, this.scale);
+        MathUtil.extractEuler(this.rotation, rotation);
+    }
+
     public updateMatrix() {
         if (Node.freeze)
             return;
@@ -52,9 +59,12 @@ export class Node {
         mat4.fromRotationTranslationScale(this.localMatrix, rotation, this.position, this.scale);
 
         if (this.parent)
-            mat4.multiply(this.worldMatrix, this.localMatrix, this.parent.worldMatrix);
+            mat4.multiply(this.worldMatrix, this.parent.worldMatrix, this.localMatrix);
         else
             mat4.copy(this.worldMatrix, this.localMatrix);
+
+        if (this.components.meshInstance)
+            this.components.meshInstance.updateBounds();
 
         for (const child of this.children)
             child.updateMatrix();
@@ -88,6 +98,7 @@ export class Node {
 
         const rotation = quat.create();
         mat4.getRotation(rotation, lookAtMatrix);
+        quat.normalize(rotation, rotation);
         MathUtil.extractEuler(this.rotation, rotation);
     }
 }

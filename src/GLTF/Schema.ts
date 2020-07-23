@@ -14,6 +14,7 @@ export interface Node {
     rotation?: number[];
     scale?: number[];
     translation?: number[];
+    children?: number[];
 }
 
 export interface Scene {

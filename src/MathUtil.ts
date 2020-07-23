@@ -1,5 +1,6 @@
-import * as vec3 from "../external/gl-matrix/vec3";
-import * as quat from "../external/gl-matrix/quat";
+import * as vec3 from "../external/gl-matrix/vec3.js";
+import * as quat from "../external/gl-matrix/quat.js";
+import * as mat4 from "../external/gl-matrix/mat4.js";
 
 // https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
 export function extractEuler(out: vec3, q: quat) {
@@ -22,4 +23,21 @@ export function extractEuler(out: vec3, q: quat) {
 
     for (let i = 0; i < 3; i++)
         out[i] = out[i] * 180.0 / Math.PI;
+}
+
+export function extractTRS(matrix: mat4, translation: vec3, rotation: quat, scale: vec3) {
+    mat4.getScaling(scale, matrix);
+
+    // To extract a correct rotation, the scaling component must be eliminated.
+    const mn = mat4.create();
+    for(const col of [0, 1, 2])
+    {
+        mn[col] = matrix[col] / scale[0];
+        mn[col + 4] = matrix[col + 4] / scale[1];
+        mn[col + 8] = matrix[col + 8] / scale[2];
+    }
+    mat4.getRotation(rotation, mn);
+    quat.normalize(rotation, rotation);
+
+    mat4.getTranslation(translation, matrix);
 }
