@@ -8,9 +8,9 @@ import {DefaultShaders} from "./shader/DefaultShaders.js";
 import {Behavior} from "./behaviors/Behavior.js";
 import {Material} from "./Material.js";
 
-import * as glMatrix from "../external/gl-matrix/common.js";
 import * as vec3 from "../external/gl-matrix/vec3.js"
 import {LightType} from "./Light.js";
+import {Bounds} from "./Bounds.js";
 
 
 export class WebGl {
@@ -23,6 +23,7 @@ export class WebGl {
     public textures = new Map<string, WebGLTexture>();
     public mainCamera: Camera = null;
 
+    public readonly worldBounding = new Bounds();
     public readonly defaultShaders = new DefaultShaders(this);
     public readonly rootNode = new Node("root");
 
@@ -34,8 +35,6 @@ export class WebGl {
     public defaultMaterial: Material;
 
     public constructor(canvas: HTMLCanvasElement) {
-        glMatrix.setMatrixArrayType(Array);
-
         this.canvas = canvas;
         this.canvasResized();
 
@@ -159,5 +158,22 @@ export class WebGl {
         cameraNode.components.camera = new Camera(cameraNode);
         this.mainCamera = cameraNode.components.camera;
         this.rootNode.addChild(cameraNode);
+    }
+
+    public calculateWorldBounding() {
+        this.worldBounding.invalidate();
+        WebGl._getBoundsRec(this.rootNode, this.worldBounding);
+
+        return this.worldBounding;
+    }
+
+    private static _getBoundsRec(node: Node, bounds: Bounds) {
+        if (node.components.meshInstance)
+            bounds.encapsulateBounds(node.components.meshInstance.worldBounds);
+
+        const childCount = node.getChildCount();
+        for (let i = 0; i < childCount; i++) {
+            WebGl._getBoundsRec(node.getChild(i), bounds);
+        }
     }
 }
