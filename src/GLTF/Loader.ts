@@ -5,9 +5,14 @@ import {Attribute, ElementBuffer, Mesh, MeshInstance, Primitive} from "../Mesh.j
 import {Material} from "../Material.js";
 import {DefaultAttributeLocations} from "../Shader.js";
 import {downloadImage} from "../Util.js";
-import {UnlitTexturedParams} from "../shader/Unlit.js";
 import {Bounds} from "../Bounds.js";
+
+import * as MathUtil from "../MathUtil.js"
 import * as vec3 from "../../external/gl-matrix/vec3.js";
+import * as vec4 from "../../external/gl-matrix/vec4.js";
+import * as quat from "../../external/gl-matrix/quat.js";
+import * as mat4 from "../../external/gl-matrix/mat4.js";
+import {PhongParams, PhongTexturedParams} from "../shader/Phong.js";
 
 
 export class Loader {
@@ -18,6 +23,8 @@ export class Loader {
     private _glBuffers: WebGLBuffer[] = null;
     private _textures: WebGLTexture[] = null;
     private _materials: Material[] = null;
+
+    public autoscaleScene = true;
 
     static readonly attributeLocations = new Map<string, number>();
 
@@ -46,7 +53,7 @@ export class Loader {
         this._arrayBuffers = this._gltf.buffers ? new Array<ArrayBuffer>(this._gltf.buffers.length) : null;
         this._glBuffers = this._gltf.bufferViews ? new Array<WebGLBuffer>(this._gltf.bufferViews.length) : null;
         this._textures = this._gltf.images ? new Array<WebGLTexture>(this._gltf.images.length) : null;
-        this._materials = this._gltf.images ? new Array<Material>(this._gltf.materials.length) : null;
+        this._materials = this._gltf.materials ? new Array<Material>(this._gltf.materials.length) : null;
 
         if (this._gltf.scenes && this._gltf.scenes.length > 0)
             return await this._loadScene(this._gltf.scenes[0]);
@@ -60,65 +67,102 @@ export class Loader {
 
         // create all the nodes
         for (let i = 0; i < this._gltf.nodes.length; i++) {
-            const node = new Node();
+            const node = await this._createNode(this._gltf.nodes[i]);
             webglNodes[i] = node;
-
-            const gltfNode = this._gltf.nodes[i];
-            if (gltfNode.name)
-                node.name = gltfNode.name;
-
-            if (gltfNode.hasOwnProperty("mesh")) {
-                node.components.meshInstance = new MeshInstance(await this._getMesh(gltfNode.mesh));
-            }
         }
 
         // set the root nodes
-        for(const rootNode of scene.nodes) {
+        for (const rootNode of scene.nodes) {
             this._webgl.rootNode.addChild(webglNodes[rootNode]);
+        }
+
+        // set children nodes
+        for (let i = 0; i < this._gltf.nodes.length; i++) {
+            const gltfNode = this._gltf.nodes[i];
+
+            if (!gltfNode.hasOwnProperty("children"))
+                continue;
+
+            for (const child of gltfNode.children) {
+                webglNodes[i].addChild(webglNodes[child]);
+            }
         }
 
         // update all matrices
         Node.freeze = false;
         this._webgl.rootNode.updateMatrix();
 
+        if (this.autoscaleScene)
+            this._autoscaleScene();
+
         return scene.nodes.map((index: number) => { return webglNodes[index]});
     }
 
-    private async _getMesh(index: number) {
-        if (this._meshes[index])
-            return this._meshes[index];
+    private async _createNode(gltfNode: GLTF.Node) {
+        const wglNode = new Node();
 
-        const gltfMesh = this._gltf.meshes[index];
+        if (gltfNode.translation)
+            vec3.copy(wglNode.position, gltfNode.translation);
 
-        const primitives = new Array<Primitive>();
-        for (const meshPrimitive of gltfMesh.primitives) {
-            const type = this._getPrimitiveType(meshPrimitive);
-            const baseMaterial = await this._getMaterial(meshPrimitive);
+        if (gltfNode.scale)
+            vec3.copy(wglNode.scale, gltfNode.scale);
 
-            const attributes = new Array<Attribute>();
-            const attributeNames = Object.keys(meshPrimitive.attributes);
-            const bounds = new Bounds();
-            for (const attributeName of attributeNames){
-                const attribute = await this._getAttribute(attributeName, meshPrimitive.attributes[attributeName]);
-
-                if (attribute !== null)
-                    attributes.push(attribute);
-
-                // position accessor must specify min and max properties
-                if (attributeName == "POSITION") {
-                    const gltfAccessor = this._gltf.accessors[meshPrimitive.attributes[attributeName]];
-                    vec3.copy(bounds.min, gltfAccessor.min);
-                    vec3.copy(bounds.max, gltfAccessor.max);
-                }
-            }
-
-            const indicesBuffer = await this._getElementBuffer(meshPrimitive.indices);
-
-            primitives.push(new Primitive(type, indicesBuffer, attributes, bounds, baseMaterial));
+        if (gltfNode.rotation) {
+            let rotation = quat.create();
+            quat.copy(rotation, gltfNode.rotation);
+            quat.normalize(rotation, rotation);
+            MathUtil.extractEuler(wglNode.rotation, rotation);
         }
 
-        const name = gltfMesh.name ? gltfMesh.name : index.toString();
-        return this._webgl.createMesh(name, primitives);
+        if (gltfNode.matrix)
+            wglNode.setTransformFromMatrix(gltfNode.matrix);
+
+        if (gltfNode.name)
+            wglNode.name = gltfNode.name;
+
+        if (gltfNode.hasOwnProperty("mesh")) {
+            wglNode.components.meshInstance = new MeshInstance(wglNode, await this._getMesh(gltfNode.mesh));
+        }
+
+        return wglNode;
+    }
+
+    private async _getMesh(index: number) {
+        if (!this._meshes[index]) {
+            const gltfMesh = this._gltf.meshes[index];
+
+            const primitives = new Array<Primitive>();
+            for (const meshPrimitive of gltfMesh.primitives) {
+                const type = this._getPrimitiveType(meshPrimitive);
+                const baseMaterial = await this._getMaterial(meshPrimitive);
+
+                const attributes = new Array<Attribute>();
+                const attributeNames = Object.keys(meshPrimitive.attributes);
+                const bounds = new Bounds();
+                for (const attributeName of attributeNames){
+                    const attribute = await this._getAttribute(attributeName, meshPrimitive.attributes[attributeName]);
+
+                    if (attribute !== null)
+                        attributes.push(attribute);
+
+                    // position accessor must specify min and max properties
+                    if (attributeName == "POSITION") {
+                        const gltfAccessor = this._gltf.accessors[meshPrimitive.attributes[attributeName]];
+                        vec3.copy(bounds.min, gltfAccessor.min);
+                        vec3.copy(bounds.max, gltfAccessor.max);
+                    }
+                }
+
+                const indicesBuffer = await this._getElementBuffer(meshPrimitive.indices);
+
+                primitives.push(new Primitive(type, indicesBuffer, attributes, bounds, baseMaterial));
+            }
+
+            const name = gltfMesh.name ? gltfMesh.name : index.toString();
+            this._meshes[index] = this._webgl.createMesh(name, primitives);
+        }
+
+        return this._meshes[index];
     }
 
     private _getPrimitiveType(primitive: GLTF.Primitive) {
@@ -149,6 +193,8 @@ export class Loader {
                 return gl.UNSIGNED_SHORT;
             case GLTF.ComponentType.UnsignedInt:
                 return gl.UNSIGNED_INT;
+            case GLTF.ComponentType.UnsignedByte:
+                return gl.UNSIGNED_BYTE;
 
             default:
                 throw new Error(`Unsupported Component Type: ${componentType}`);
@@ -250,12 +296,23 @@ export class Loader {
     private async _getMaterial(primitive: GLTF.Primitive) {
         if (primitive.hasOwnProperty("material")) {
 
-            // TODO: Logic to determine best material
             if (!this._materials[primitive.material]) {
                 const gltfMaterial = this._gltf.materials[primitive.material];
-                const faceMaterial = new Material(await this._webgl.defaultShaders.unlitTextured());
-                const params = faceMaterial.params as UnlitTexturedParams;
-                params.texture = await this._getTexture(gltfMaterial.pbrMetallicRoughness.baseColorTexture.index);
+                let faceMaterial:Material = null;
+
+                if (gltfMaterial.pbrMetallicRoughness.baseColorTexture) {
+                    faceMaterial = new Material(await this._webgl.defaultShaders.phongTextured());
+                    const params = faceMaterial.params as PhongTexturedParams;
+                    params.diffuseTexture = await this._getTexture(gltfMaterial.pbrMetallicRoughness.baseColorTexture.index);
+                }
+                else {
+                    faceMaterial = new Material(await this._webgl.defaultShaders.phong());
+                }
+
+                const params = faceMaterial.params as PhongParams;
+                if (gltfMaterial.pbrMetallicRoughness.baseColorFactor) {
+                    vec4.copy(params.diffuseColor, gltfMaterial.pbrMetallicRoughness.baseColorFactor);
+                }
 
                 this._materials[primitive.material] = faceMaterial;
             }
@@ -273,5 +330,19 @@ export class Loader {
             this._textures[index] = this._webgl.createTextureFromImage(index.toString(), await downloadImage(this._getFetchUri(image.uri)));
         }
         return this._textures[index];
+    }
+
+    private _autoscaleScene() {
+        const worldBounding = this._webgl.calculateWorldBounding();
+        const minValue = Math.min(worldBounding.min[0], Math.min(worldBounding.min[1], worldBounding.min[2]));
+        const maxValue = Math.max(worldBounding.max[0], Math.max(worldBounding.max[1], worldBounding.max[2]));
+        const deltaValue = maxValue - minValue;
+        const scale = 1.0 / deltaValue;
+
+        vec3.set(this._webgl.rootNode.scale, scale, scale, scale);
+        this._webgl.rootNode.updateMatrix();
+
+        vec3.scale(this._webgl.worldBounding.min, this._webgl.worldBounding.min, scale);
+        vec3.scale(this._webgl.worldBounding.max, this._webgl.worldBounding.max, scale);
     }
 }

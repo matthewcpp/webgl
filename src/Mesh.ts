@@ -1,4 +1,5 @@
 import {Bounds} from "./Bounds.js";
+import {Node} from "./Node.js"
 import {Material} from "./Material.js";
 
 export class Attribute {
@@ -40,13 +41,18 @@ export class Mesh {
 }
 
 export class MeshInstance {
+    private readonly _node: Node;
+    public readonly mesh: Mesh
     public materials: Array<Material>;
+    public worldBounds = new Bounds();
 
     public constructor(
-        public readonly mesh: Mesh,
+        node: Node,
+        mesh: Mesh,
         materials?: Array<Material>
     ) {
-
+        this._node = node;
+        this.mesh = mesh;
         this.materials = new Array<Material>(mesh.primitives.length);
 
         if (materials) {
@@ -61,9 +67,11 @@ export class MeshInstance {
                 this.materials[i] = mesh.primitives[i].baseMaterial.clone();
         }
 
+        this.updateBounds();
     }
 
-    public clone() {
-        return new MeshInstance(this.mesh, this.materials);
+    public updateBounds() {
+        Bounds.transform(this.worldBounds, this._node.worldMatrix, this.mesh.primitives[0].bounds);
     }
+
 }

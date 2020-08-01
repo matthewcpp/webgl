@@ -8,8 +8,13 @@ export enum ComponentType {
 }
 
 export interface Node {
-    name?: string,
-    mesh?: number,
+    name?: string;
+    mesh?: number;
+    matrix?: number[];
+    rotation?: number[];
+    scale?: number[];
+    translation?: number[];
+    children?: number[];
 }
 
 export interface Scene {
@@ -30,7 +35,8 @@ export enum PrimitiveMode{
 export interface PBRMetallicRoughness {
     baseColorTexture: {
         index: number;
-    }
+    };
+    baseColorFactor: number[];
 }
 
 export interface Material {

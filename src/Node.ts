@@ -1,7 +1,10 @@
 import {Components} from "./Components.js";
+import * as MathUtil from  "./MathUtil.js"
+
 import * as vec3 from "../external/gl-matrix/vec3.js";
 import * as quat from "../external/gl-matrix/quat.js";
 import * as mat4 from "../external/gl-matrix/mat4.js";
+import {Bounds} from "./Bounds.js";
 
 export class Node {
     public static freeze = false;
@@ -22,6 +25,10 @@ export class Node {
     ) {}
 
     public addChild(child: Node) {
+        // remove the child from its parent's children array
+        if (child.parent)
+            child.parent.children.filter((c: Node) => { return c != child; });
+
         child.parent = this;
         this.children.push(child);
 
@@ -36,16 +43,28 @@ export class Node {
         return this.children.length;
     }
 
+    public setTransformFromMatrix(matrix: mat4) {
+        const rotation = quat.create();
+        MathUtil.extractTRS(matrix, this.position, rotation, this.scale);
+        MathUtil.extractEuler(this.rotation, rotation);
+    }
+
     public updateMatrix() {
         if (Node.freeze)
             return;
 
+        mat4.identity(this.localMatrix);
         const rotation = quat.create();
         quat.fromEuler(rotation, this.rotation[0], this.rotation[1], this.rotation[2]);
         mat4.fromRotationTranslationScale(this.localMatrix, rotation, this.position, this.scale);
 
         if (this.parent)
             mat4.multiply(this.worldMatrix, this.parent.worldMatrix, this.localMatrix);
+        else
+            mat4.copy(this.worldMatrix, this.localMatrix);
+
+        if (this.components.meshInstance)
+            this.components.meshInstance.updateBounds();
 
         for (const child of this.children)
             child.updateMatrix();
@@ -79,30 +98,7 @@ export class Node {
 
         const rotation = quat.create();
         mat4.getRotation(rotation, lookAtMatrix);
-        Node.extractEuler(this.rotation, rotation);
-    }
-
-    // TODO: Find better place for this function
-    // https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-    private static extractEuler(out: vec3, q: quat) {
-        // roll (x-axis rotation)
-        const sinr_cosp = 2 * (q[3] * q[0] + q[1] * q[2]);
-        const cosr_cosp = 1 - 2 * (q[0] * q[0] + q[1] * q[1]);
-        out[0] = Math.atan2(sinr_cosp, cosr_cosp);
-
-        // pitch (y-axis rotation)
-        const sinp = 2 * (q[3] * q[1] - q[2] * q[0]);
-        if (Math.abs(sinp) >= 1)
-            out[1] = sinp >= 0 ? Math.PI / 2.0 : -Math.PI / 2.0;  // use 90 degrees if out of range
-        else
-            out[1] = Math.asin(sinp);
-
-        // yaw (z-axis rotation)
-        const siny_cosp = 2 * (q[3] * q[2] + q[0] * q[1]);
-        const cosy_cosp = 1 - 2 * (q[1] * q[1] + q[2] * q[2]);
-        out[2] = Math.atan2(siny_cosp, cosy_cosp);
-
-        for (let i = 0; i < 3; i++)
-            out[i] = out[i] * 180.0 / Math.PI;
+        quat.normalize(rotation, rotation);
+        MathUtil.extractEuler(this.rotation, rotation);
     }
 }

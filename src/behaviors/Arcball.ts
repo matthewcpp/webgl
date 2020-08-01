@@ -9,6 +9,7 @@ import * as quat from "../../external/gl-matrix/quat.js"
 export class Arcball extends Behavior {
     private _dragging = false;
     private _distance = 0.0;
+    private _diagonal = 0.0;
     private _rotX = 0.0;
     private _rotY = 0.0;
     private _target = vec3.create();
@@ -29,10 +30,11 @@ export class Arcball extends Behavior {
 
     update(): void {}
 
-    public setInitial(node: Node) {
-        const worldBounding = Bounds.transform(node.worldMatrix, node.components.meshInstance.mesh.primitives[0].bounds);
+    public setInitial(worldBounding: Bounds) {
         this._target = worldBounding.center();
-        this._distance = vec3.distance(worldBounding.min, worldBounding.max) * 2.0;
+        this._diagonal = vec3.distance(worldBounding.min, worldBounding.max);
+        this._distance = this._diagonal * 2.0;
+
         vec3.copy(this._cameraNode.position, worldBounding.max);
 
         this._setCameraPos();
@@ -48,7 +50,7 @@ export class Arcball extends Behavior {
     }
 
     private _zoom(delta: number) {
-        this._distance += delta * 0.5;
+        this._distance += delta * this._diagonal * 0.1;
         this._setCameraPos();
     }
 

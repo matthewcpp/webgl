@@ -5,7 +5,7 @@ import * as mat4 from "../external/gl-matrix/mat4.js"
 
 export class Camera {
     private _near = 0.1;
-    private _far = 100.0;
+    private _far = 1000.0;
     private _aspect = 1.33;
     private _fovy = 45.0;
 
