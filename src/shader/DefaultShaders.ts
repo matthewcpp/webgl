@@ -1,7 +1,7 @@
-import {WebGl} from "../WebGL.js";
-import {downloadShaderSource} from "../Util.js";
-import {UnlitShader, UnlitTexturedShader} from "./Unlit.js";
-import {PhongShader, PhongTexturedShader} from "./Phong.js";
+import {WebGl} from "../WebGL";
+import {downloadShaderSource} from "../Util";
+import {UnlitShader, UnlitTexturedShader} from "./Unlit";
+import {PhongShader, PhongTexturedShader} from "./Phong";
 
 export class DefaultShaders {
     public baseUrl = "/dist/shaders";

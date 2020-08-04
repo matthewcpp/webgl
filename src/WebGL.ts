@@ -1,17 +1,16 @@
-import {Mesh, Primitive} from "./Mesh.js"
-import {Renderer} from "./Renderer.js";
-import {Texture} from "./Texture.js"
-import {Node} from "./Node.js";
-import {Camera} from "./Camera.js";
-import {Shader, ShaderData} from "./Shader.js";
-import {DefaultShaders} from "./shader/DefaultShaders.js";
-import {Behavior} from "./behaviors/Behavior.js";
-import {Material} from "./Material.js";
-
-import * as vec3 from "../external/gl-matrix/vec3.js"
+import {Mesh, Primitive} from "./Mesh"
+import {Renderer} from "./Renderer";
+import {Texture} from "./Texture"
+import {Node} from "./Node";
+import {Camera} from "./Camera";
+import {Shader, ShaderData} from "./Shader";
+import {DefaultShaders} from "./shader/DefaultShaders";
+import {Behavior} from "./behaviors/Behavior";
+import {Material} from "./Material";
 import {LightType} from "./Light.js";
 import {Bounds} from "./Bounds.js";
 
+import {vec3} from "gl-matrix";
 
 export class WebGl {
     public readonly canvas: HTMLCanvasElement;
@@ -154,7 +153,7 @@ export class WebGl {
         const cameraNode = new Node("Main Camera");
         vec3.set(cameraNode.position, 0.0, 7.0, 10.0);
         cameraNode.updateMatrix();
-        cameraNode.lookAt([0.0, 1.0, 0.0], cameraNode.up());
+        cameraNode.lookAt(vec3.fromValues(0.0, 1.0, 0.0), cameraNode.up());
         cameraNode.components.camera = new Camera(cameraNode);
         this.mainCamera = cameraNode.components.camera;
         this.rootNode.addChild(cameraNode);

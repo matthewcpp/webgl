@@ -1,7 +1,6 @@
+import {Light} from "../Light";
 
-import * as mat4 from "../../external/gl-matrix/mat4.js"
-import * as vec4 from "../../external/gl-matrix/vec4.js"
-import {Light} from "../Light.js";
+import {mat4, vec3, vec4} from "gl-matrix"
 
 export class ObjectUniformBuffer {
     private static size = (16 + 16) * 4;
@@ -95,7 +94,7 @@ export class UniformBuffer {
         this._floatView.set(viewMatrix, 16);
     }
 
-    public set cameraWorldPos(position: vec4) {
+    public set cameraWorldPos(position: vec3) {
         this._floatView.set(position, 32)
     }
 

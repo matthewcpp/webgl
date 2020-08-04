@@ -1,4 +1,4 @@
-import {ShaderData} from "./Shader.js";
+import {ShaderData} from "./Shader";
 
 export function downloadImage(url: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {

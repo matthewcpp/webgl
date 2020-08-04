@@ -1,7 +1,6 @@
 import {Node} from "./Node.js";
 
-import * as vec3 from "../external/gl-matrix/vec3.js"
-import * as mat4 from "../external/gl-matrix/mat4.js"
+import {vec3, mat4} from "gl-matrix"
 
 export class Camera {
     private _near = 0.1;

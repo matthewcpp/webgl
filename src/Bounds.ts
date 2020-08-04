@@ -1,6 +1,4 @@
-import * as vec3 from "../external/gl-matrix/vec3.js"
-import * as mat3 from "../external/gl-matrix/mat3.js"
-import * as mat4 from "../external/gl-matrix/mat4.js"
+import {vec3, mat3, mat4} from "gl-matrix"
 
 export class Bounds {
     public min = vec3.fromValues(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);

@@ -1,4 +1,4 @@
-import {Shader} from "./Shader.js";
+import {Shader} from "./Shader";
 
 export class Material {
     public readonly shader: Shader;

@@ -1,5 +1,6 @@
 {
   "name": "webgl",
+  "module": "./dist/webgl.es.js",
   "version": "1.0.0",
   "dependencies": {
     "fs-extra": "^8.1.0",
@@ -13,6 +14,7 @@
   },
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
+    "build": "rollup -c",
     "prepare_shader": "node scripts/prepare_shader.js",
     "prepare_default_shaders": "node scripts/prepare_default_shaders.js"
   },

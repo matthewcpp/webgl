@@ -1,19 +1,15 @@
-import {WebGl} from "../WebGL.js";
-import * as GLTF from "./Schema.js";
-import {Node} from "../Node.js";
-import {Attribute, ElementBuffer, Mesh, MeshInstance, Primitive} from "../Mesh.js";
+import {WebGl} from "../WebGL";
+import * as GLTF from "./Schema";
+import {Node} from "../Node";
+import {Attribute, ElementBuffer, Mesh, MeshInstance, Primitive} from "../Mesh";
 import {Material} from "../Material.js";
-import {DefaultAttributeLocations} from "../Shader.js";
-import {downloadImage} from "../Util.js";
-import {Bounds} from "../Bounds.js";
+import {DefaultAttributeLocations} from "../Shader";
+import {downloadImage} from "../Util";
+import {Bounds} from "../Bounds";
+import {PhongParams, PhongTexturedParams} from "../shader/Phong";
+import {MathUtil} from "../MathUtil"
 
-import * as MathUtil from "../MathUtil.js"
-import * as vec3 from "../../external/gl-matrix/vec3.js";
-import * as vec4 from "../../external/gl-matrix/vec4.js";
-import * as quat from "../../external/gl-matrix/quat.js";
-import * as mat4 from "../../external/gl-matrix/mat4.js";
-import {PhongParams, PhongTexturedParams} from "../shader/Phong.js";
-
+import {vec3, vec4, quat, mat4} from "gl-matrix"
 
 export class Loader {
     private _baseUrl: string;
@@ -109,13 +105,13 @@ export class Loader {
 
         if (gltfNode.rotation) {
             let rotation = quat.create();
-            quat.copy(rotation, gltfNode.rotation);
+            quat.copy(rotation, gltfNode.rotation as unknown as quat);
             quat.normalize(rotation, rotation);
             MathUtil.extractEuler(wglNode.rotation, rotation);
         }
 
         if (gltfNode.matrix)
-            wglNode.setTransformFromMatrix(gltfNode.matrix);
+            wglNode.setTransformFromMatrix(gltfNode.matrix as unknown as mat4);
 
         if (gltfNode.name)
             wglNode.name = gltfNode.name;

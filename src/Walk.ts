@@ -1,4 +1,4 @@
-import {Node} from "./Node.js"
+import {Node} from "./Node"
 
 export function dfsWalk(node: Node, func: (node: Node) => void) {
     func(node);
