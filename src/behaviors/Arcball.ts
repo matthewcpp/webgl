@@ -1,10 +1,9 @@
 import {Behavior} from "./Behavior.js";
-import {WebGl} from "../WebGL.js";
+import {Scene} from "../Scene.js";
 import {Node} from "../Node.js"
 import {Bounds} from "../Bounds.js";
 
-import * as vec3 from "../../external/gl-matrix/vec3.js"
-import * as quat from "../../external/gl-matrix/quat.js"
+import {vec3, quat} from "gl-matrix";
 
 export class Arcball extends Behavior {
     private _dragging = false;
@@ -18,14 +17,14 @@ export class Arcball extends Behavior {
 
     private _cameraNode: Node;
 
-    public constructor(cameraNode: Node, webgl: WebGl){
-        super(webgl);
+    public constructor(cameraNode: Node, scene: Scene){
+        super(scene);
         this._cameraNode = cameraNode;
 
-        webgl.canvas.onpointerdown = (event: PointerEvent) => { this._onPointerDown(event); }
-        webgl.canvas.onpointermove = (event:PointerEvent) => { this._onPointerMove(event); }
-        webgl.canvas.onpointerup = (event: PointerEvent) => { this._onPointerUp(event); }
-        webgl.canvas.onwheel = (event: WheelEvent) => { this._onWheel(event); }
+        scene.canvas.onpointerdown = (event: PointerEvent) => { this._onPointerDown(event); }
+        scene.canvas.onpointermove = (event:PointerEvent) => { this._onPointerMove(event); }
+        scene.canvas.onpointerup = (event: PointerEvent) => { this._onPointerUp(event); }
+        scene.canvas.onwheel = (event: WheelEvent) => { this._onWheel(event); }
     }
 
     update(): void {}
@@ -41,7 +40,7 @@ export class Arcball extends Behavior {
     }
 
     private _orbit(deltaX: number, deltaY:number) {
-        const rotationAmount = this.rotationSpeed * this._webgl.deltaTime
+        const rotationAmount = this.rotationSpeed * this._scene.deltaTime
 
         this._rotY += deltaX * rotationAmount;
         this._rotX += deltaY * rotationAmount;
@@ -60,7 +59,7 @@ export class Arcball extends Behavior {
         const q = quat.create();
         quat.fromEuler(q, this._rotX, this._rotY, 0.0);
 
-        const orbitPos = [0.0, 0.0, 1.0];
+        const orbitPos = vec3.fromValues(0.0, 0.0, 1.0);
         vec3.transformQuat(orbitPos, orbitPos, q);
         vec3.normalize(orbitPos, orbitPos);
 

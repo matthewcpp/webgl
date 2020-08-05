@@ -1,6 +1,6 @@
 import {Behavior} from "../../src/behaviors/Behavior.js";
 import {Node} from "../../src/Node.js";
-import {WebGl} from "../../src/WebGL.js";
+import {Scene} from "../../src/Scene.js";
 
 import * as vec3 from "../../external/gl-matrix/vec3.js"
 
@@ -10,7 +10,7 @@ export class KeyboardController extends Behavior {
     private _speed = 1.0;
     private _state = 0;
 
-    public constructor(node: Node, webgl: WebGl) {
+    public constructor(node: Node, webgl: Scene) {
         super(webgl);
 
         this._node = node;
@@ -92,7 +92,7 @@ export class KeyboardController extends Behavior {
             this._direction[2] += 1.0;
 
         vec3.normalize(this._direction, this._direction);
-        vec3.scaleAndAdd(this._node.position, this._node.position, this._direction, this._speed * this._webgl.deltaTime);
+        vec3.scaleAndAdd(this._node.position, this._node.position, this._direction, this._speed * this._scene.deltaTime);
         this._node.updateMatrix();
     }
 }

@@ -1,4 +1,4 @@
-import {WebGl} from "../../src/WebGL.js";
+import {Scene} from "../../src/Scene.js";
 import {Node} from "../../src/Node.js";
 import * as GLTF from "../../src/GLTF/Loader.js";
 import {Arcball} from "../../src/behaviors/Arcball.js";
@@ -18,13 +18,13 @@ import * as glMatrix from "../../external/gl-matrix/common.js";
 import {Bounds} from "../../src/Bounds.js";
 
 
-let webGl: WebGl = null;
+let webGl: Scene = null;
 
 
 window.onload = async () => {
     let glCanvas = document.querySelector("#gl-canvas") as HTMLCanvasElement;
     glMatrix.setMatrixArrayType(Array);
-    webGl = new WebGl(glCanvas);
+    webGl = new Scene(glCanvas);
     await webGl.init();
 
     webGl.canvas.oncontextmenu = () => false;

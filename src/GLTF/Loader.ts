@@ -1,4 +1,4 @@
-import {WebGl} from "../WebGL";
+import {Scene} from "../Scene";
 import * as GLTF from "./Schema";
 import {Node} from "../Node";
 import {Attribute, ElementBuffer, Mesh, MeshInstance, Primitive} from "../Mesh";
@@ -25,7 +25,7 @@ export class Loader {
     static readonly attributeLocations = new Map<string, number>();
 
     public constructor(
-        private _webgl: WebGl)
+        private _scene: Scene)
     {
         if (Loader.attributeLocations.size === 0) {
             Loader.attributeLocations.set("POSITION", DefaultAttributeLocations.Position);
@@ -69,7 +69,7 @@ export class Loader {
 
         // set the root nodes
         for (const rootNode of scene.nodes) {
-            this._webgl.rootNode.addChild(webglNodes[rootNode]);
+            this._scene.rootNode.addChild(webglNodes[rootNode]);
         }
 
         // set children nodes
@@ -86,7 +86,7 @@ export class Loader {
 
         // update all matrices
         Node.freeze = false;
-        this._webgl.rootNode.updateMatrix();
+        this._scene.rootNode.updateMatrix();
 
         if (this.autoscaleScene)
             this._autoscaleScene();
@@ -155,7 +155,7 @@ export class Loader {
             }
 
             const name = gltfMesh.name ? gltfMesh.name : index.toString();
-            this._meshes[index] = this._webgl.createMesh(name, primitives);
+            this._meshes[index] = this._scene.createMesh(name, primitives);
         }
 
         return this._meshes[index];
@@ -166,7 +166,7 @@ export class Loader {
 
         switch (mode) {
             case GLTF.PrimitiveMode.Triangles:
-                return this._webgl.gl.TRIANGLES;
+                return this._scene.gl.TRIANGLES;
 
             default:
                 throw new Error(`Unsupported Primitive Mode: ${mode}`);
@@ -230,7 +230,7 @@ export class Loader {
 
         return new Attribute(
             attributeIndex,
-            Loader._getComponentType(accessor.componentType, this._webgl.gl),
+            Loader._getComponentType(accessor.componentType, this._scene.gl),
             Loader._getComponentElementCount(accessor.type),
             accessor.count,
             accessor.byteOffset,
@@ -243,7 +243,7 @@ export class Loader {
         const accessor = this._gltf.accessors[index];
 
         return new ElementBuffer(
-            Loader._getComponentType(accessor.componentType, this._webgl.gl),
+            Loader._getComponentType(accessor.componentType, this._scene.gl),
             accessor.count,
             accessor.byteOffset,
             await this._getBufferView(accessor.bufferView)
@@ -256,7 +256,7 @@ export class Loader {
             const arrayBuffer = await this._getBuffer(bufferView.buffer);
             const typedArray = new Uint8Array(arrayBuffer, bufferView.byteOffset, bufferView.byteLength);
 
-            const gl = this._webgl.gl;
+            const gl = this._scene.gl;
             const target = bufferView.target === GLTF.BufferViewTarget.ArrayBuffer ? gl.ARRAY_BUFFER : gl.ELEMENT_ARRAY_BUFFER;
             const glBuffer = gl.createBuffer();
             gl.bindBuffer(target, glBuffer);
@@ -297,12 +297,12 @@ export class Loader {
                 let faceMaterial:Material = null;
 
                 if (gltfMaterial.pbrMetallicRoughness.baseColorTexture) {
-                    faceMaterial = new Material(await this._webgl.defaultShaders.phongTextured());
+                    faceMaterial = new Material(await this._scene.defaultShaders.phongTextured());
                     const params = faceMaterial.params as PhongTexturedParams;
                     params.diffuseTexture = await this._getTexture(gltfMaterial.pbrMetallicRoughness.baseColorTexture.index);
                 }
                 else {
-                    faceMaterial = new Material(await this._webgl.defaultShaders.phong());
+                    faceMaterial = new Material(await this._scene.defaultShaders.phong());
                 }
 
                 const params = faceMaterial.params as PhongParams;
@@ -316,29 +316,29 @@ export class Loader {
             return this._materials[primitive.material].clone();
         }
         else {
-            return this._webgl.defaultMaterial.clone();
+            return this._scene.defaultMaterial.clone();
         }
     }
 
     private async _getTexture(index: number) {
         if (!this._textures[index]) {
             const image = this._gltf.images[index];
-            this._textures[index] = this._webgl.createTextureFromImage(index.toString(), await downloadImage(this._getFetchUri(image.uri)));
+            this._textures[index] = this._scene.createTextureFromImage(index.toString(), await downloadImage(this._getFetchUri(image.uri)));
         }
         return this._textures[index];
     }
 
     private _autoscaleScene() {
-        const worldBounding = this._webgl.calculateWorldBounding();
+        const worldBounding = this._scene.calculateWorldBounding();
         const minValue = Math.min(worldBounding.min[0], Math.min(worldBounding.min[1], worldBounding.min[2]));
         const maxValue = Math.max(worldBounding.max[0], Math.max(worldBounding.max[1], worldBounding.max[2]));
         const deltaValue = maxValue - minValue;
         const scale = 1.0 / deltaValue;
 
-        vec3.set(this._webgl.rootNode.scale, scale, scale, scale);
-        this._webgl.rootNode.updateMatrix();
+        vec3.set(this._scene.rootNode.scale, scale, scale, scale);
+        this._scene.rootNode.updateMatrix();
 
-        vec3.scale(this._webgl.worldBounding.min, this._webgl.worldBounding.min, scale);
-        vec3.scale(this._webgl.worldBounding.max, this._webgl.worldBounding.max, scale);
+        vec3.scale(this._scene.worldBounding.min, this._scene.worldBounding.min, scale);
+        vec3.scale(this._scene.worldBounding.max, this._scene.worldBounding.max, scale);
     }
 }
