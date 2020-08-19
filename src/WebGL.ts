@@ -5,12 +5,11 @@ import {Camera} from "./Camera";
 import {Components} from "./Components";
 import {Light, LightType} from "./Light";
 import {Material} from "./Material";
-import {Mesh, MeshInstance} from "./Mesh";
+import {Mesh, MeshInstance, Attribute, ElementBuffer, Primitive} from "./Mesh";
 import {Node} from "./Node"
 import {Scene} from "./Scene";
-import {Shader} from "./Shader"
+import {Shader, ShaderData} from "./Shader"
 import {Texture} from "./Texture";
-
 
 export {
     Arcball,
@@ -20,9 +19,9 @@ export {
     Components,
     Light, LightType,
     Material,
-    Mesh, MeshInstance,
+    Mesh, MeshInstance, Attribute, ElementBuffer, Primitive,
     Node,
     Scene,
-    Shader,
+    Shader, ShaderData,
     Texture
 }

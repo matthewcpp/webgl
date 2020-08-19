@@ -1,24 +1,21 @@
 {
-  "name": "webgl",
-  "module": "./dist/webgl.es.js",
-  "version": "1.0.0",
+  "name": "@matthewcpp/webgl",
+  "module": "dist/webgl.es.js",
+  "types": "dist/webgl.d.ts",
+  "version": "0.1.0",
   "dependencies": {
-    "fs-extra": "^8.1.0",
     "gl-matrix": "^3.2.1"
   },
   "devDependencies": {
-    "@types/fs-extra": "^8.0.1",
+    "@rollup/plugin-node-resolve": "^8.4.0",
+    "@rollup/plugin-replace": "^2.3.3",
     "@types/gl-matrix": "^2.4.5",
-    "@types/node": "^13.7.1",
-    "http-server": "^0.12.1"
+    "rollup": "^2.23.0",
+    "rollup-plugin-typescript2": "^0.27.1",
+    "typescript": "^3.9.7",
+    "@types/node": "^13.7.1"
   },
   "scripts": {
-    "postinstall": "node scripts/postinstall.js",
-    "build": "rollup -c",
-    "prepare_shader": "node scripts/prepare_shader.js",
-    "prepare_default_shaders": "node scripts/prepare_default_shaders.js"
-  },
-  "engines": {
-    "node": ">=11.4.0"
+    "build": "npx rollup --config"
   }
 }

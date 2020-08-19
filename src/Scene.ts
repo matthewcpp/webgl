@@ -7,8 +7,8 @@ import {Shader, ShaderData} from "./Shader";
 import {DefaultShaders} from "./shader/DefaultShaders";
 import {Behavior} from "./behaviors/Behavior";
 import {Material} from "./Material";
-import {LightType} from "./Light.js";
-import {Bounds} from "./Bounds.js";
+import {Light, LightType} from "./Light";
+import {Bounds} from "./Bounds";
 
 import {vec3} from "gl-matrix";
 
@@ -145,7 +145,7 @@ export class Scene {
         return texture;
     }
 
-    public createLight(lightType: LightType, node: Node){
+    public createLight(lightType: LightType, node: Node): Light {
         return this._renderer.createLight(lightType, node);
     }
 

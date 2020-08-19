@@ -1,18 +1,18 @@
 {
   "compilerOptions": {
     "module": "es6",
-    "target": "es2017",
-    "sourceMap": false,
     "declaration": true,
-    "declarationDir": "./dist",
-    "outDir": "./dist",
+    "outDir": "dist/scratch",
+    "declarationDir": "dist/scratch",
+    "target": "es2017",
     "lib": [
       "es2017",
       "dom"
-    ]
+    ],
+    "typeRoots": ["node_modules"],
+    "types": ["gl-matrix"]
   },
   "include": [
-    "src/**/*",
-    "examples/**/*"
+    "src/**/*.ts"
   ]
 }
