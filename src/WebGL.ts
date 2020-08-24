@@ -4,6 +4,7 @@ import {Bounds} from "./Bounds";
 import {Camera} from "./Camera";
 import {Components} from "./Components";
 import {Light, LightType} from "./Light";
+import {Loader} from "./GLTF/Loader.js";
 import {Material} from "./Material";
 import {Mesh, MeshInstance, Attribute, ElementBuffer, Primitive} from "./Mesh";
 import {Node} from "./Node"
@@ -18,6 +19,7 @@ export {
     Camera,
     Components,
     Light, LightType,
+    Loader,
     Material,
     Mesh, MeshInstance, Attribute, ElementBuffer, Primitive,
     Node,

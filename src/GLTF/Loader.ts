@@ -98,10 +98,10 @@ export class Loader {
         const wglNode = new Node();
 
         if (gltfNode.translation)
-            vec3.copy(wglNode.position, gltfNode.translation);
+            vec3.copy(wglNode.position, gltfNode.translation as unknown as vec3);
 
         if (gltfNode.scale)
-            vec3.copy(wglNode.scale, gltfNode.scale);
+            vec3.copy(wglNode.scale, gltfNode.scale as unknown as vec3);
 
         if (gltfNode.rotation) {
             let rotation = quat.create();
@@ -144,8 +144,8 @@ export class Loader {
                     // position accessor must specify min and max properties
                     if (attributeName == "POSITION") {
                         const gltfAccessor = this._gltf.accessors[meshPrimitive.attributes[attributeName]];
-                        vec3.copy(bounds.min, gltfAccessor.min);
-                        vec3.copy(bounds.max, gltfAccessor.max);
+                        vec3.copy(bounds.min, gltfAccessor.min as unknown as vec3);
+                        vec3.copy(bounds.max, gltfAccessor.max as unknown as vec3);
                     }
                 }
 
@@ -307,7 +307,7 @@ export class Loader {
 
                 const params = faceMaterial.params as PhongParams;
                 if (gltfMaterial.pbrMetallicRoughness.baseColorFactor) {
-                    vec4.copy(params.diffuseColor, gltfMaterial.pbrMetallicRoughness.baseColorFactor);
+                    vec4.copy(params.diffuseColor, gltfMaterial.pbrMetallicRoughness.baseColorFactor as unknown as vec4);
                 }
 
                 this._materials[primitive.material] = faceMaterial;
