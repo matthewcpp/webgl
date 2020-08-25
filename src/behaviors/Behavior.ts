@@ -1,12 +1,12 @@
-import {WebGl} from "../WebGL.js";
+import {Scene} from "../Scene.js";
 
 export abstract class Behavior {
     public active = true;
 
     protected constructor(
-        protected readonly _webgl: WebGl
+        protected readonly _scene: Scene
     ) {
-        this._webgl._behaviors.push(this);
+        this._scene._behaviors.push(this);
     }
 
     abstract update(): void;
@@ -15,7 +15,7 @@ export abstract class Behavior {
 export class FuncBehavior extends Behavior{
     private readonly _func: () => void;
 
-    public constructor(webgl: WebGl, func: () => void) {
+    public constructor(webgl: Scene, func: () => void) {
         super(webgl);
         this._func = func;
     }

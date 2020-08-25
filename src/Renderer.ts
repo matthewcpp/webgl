@@ -1,12 +1,12 @@
-import {Camera} from "./Camera.js";
-import {Node} from "./Node.js";
-import {Shader} from "./Shader.js";
-import {dfsWalk} from "./Walk.js";
-import {Primitive} from "./Mesh.js";
-import {ObjectUniformBuffer, UniformBuffer} from "./shader/UniformBuffer.js";
-import {Light, LightType} from "./Light.js";
+import {Camera} from "./Camera";
+import {Node} from "./Node";
+import {Shader} from "./Shader";
+import {dfsWalk} from "./Walk";
+import {Primitive} from "./Mesh";
+import {ObjectUniformBuffer, UniformBuffer} from "./shader/UniformBuffer";
+import {Light, LightType} from "./Light";
 
-import * as mat4 from "../external/gl-matrix/mat4.js";
+import {mat4, vec4} from "gl-matrix"
 
 class DrawCall {
     public constructor(
@@ -32,7 +32,7 @@ export class Renderer {
         this.gl = gl;
 
         this._uniformBuffer = new UniformBuffer(this.gl);
-        this._uniformBuffer.ambientColor = [1.0, 1.0, 1.0, 1.0];
+        this._uniformBuffer.ambientColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
         this._uniformBuffer.ambientIntensity = 0.1;
 
         this._objectUniformBuffer = new ObjectUniformBuffer(this.gl);

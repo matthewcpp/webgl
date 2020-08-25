@@ -1,6 +1,6 @@
 import {Node} from "./Node.js";
 
-import * as vec3 from "../external/gl-matrix/vec3.js";
+import {vec3} from "gl-matrix"
 
 export enum LightType {
     Directional,

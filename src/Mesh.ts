@@ -1,6 +1,6 @@
-import {Bounds} from "./Bounds.js";
-import {Node} from "./Node.js"
-import {Material} from "./Material.js";
+import {Bounds} from "./Bounds";
+import {Node} from "./Node"
+import {Material} from "./Material";
 
 export class Attribute {
     public constructor(

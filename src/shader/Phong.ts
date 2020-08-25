@@ -1,6 +1,7 @@
 import {DefaultAttributeLocations, ShaderInterface} from "../Shader.js";
-import * as vec4 from "../../external/gl-matrix/vec4.js";
 import {Texture} from "../Texture.js";
+
+import {vec4} from "gl-matrix"
 
 export interface PhongParams {
     diffuseColor: vec4;

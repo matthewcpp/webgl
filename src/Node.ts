@@ -1,10 +1,7 @@
-import {Components} from "./Components.js";
-import * as MathUtil from  "./MathUtil.js"
+import {Components} from "./Components";
+import {MathUtil} from "./MathUtil";
 
-import * as vec3 from "../external/gl-matrix/vec3.js";
-import * as quat from "../external/gl-matrix/quat.js";
-import * as mat4 from "../external/gl-matrix/mat4.js";
-import {Bounds} from "./Bounds.js";
+import {vec3, quat, mat4} from "gl-matrix"
 
 export class Node {
     public static freeze = false;

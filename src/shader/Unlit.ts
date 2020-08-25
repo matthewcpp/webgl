@@ -1,5 +1,6 @@
-import * as vec4 from "../../external/gl-matrix/vec4.js";
-import {DefaultAttributeLocations, ShaderInterface} from "../Shader.js";
+import {DefaultAttributeLocations, ShaderInterface} from "../Shader";
+
+import {vec4} from "gl-matrix"
 
 export interface UnlitParams {
     color: vec4;

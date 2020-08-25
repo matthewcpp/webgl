@@ -1,7 +1,7 @@
-import {Camera} from "./Camera.js";
-import {MeshInstance} from "./Mesh.js";
-import {Behavior} from "./behaviors/Behavior.js";
-import {Light} from "./Light.js"
+import {Camera} from "./Camera";
+import {MeshInstance} from "./Mesh";
+import {Behavior} from "./behaviors/Behavior";
+import {Light} from "./Light"
 
 export interface Components {
     camera?: Camera;
