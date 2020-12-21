@@ -104,10 +104,8 @@ export class Loader {
             vec3.copy(wglNode.scale, gltfNode.scale as unknown as vec3);
 
         if (gltfNode.rotation) {
-            let rotation = quat.create();
-            quat.copy(rotation, gltfNode.rotation as unknown as quat);
-            quat.normalize(rotation, rotation);
-            MathUtil.extractEuler(wglNode.rotation, rotation);
+            quat.copy(wglNode.rotation, gltfNode.rotation as unknown as quat);
+            quat.normalize(wglNode.rotation, wglNode.rotation);
         }
 
         if (gltfNode.matrix)
