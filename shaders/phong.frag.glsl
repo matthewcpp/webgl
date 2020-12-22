@@ -42,7 +42,8 @@ vec4 directionalLight(wglLight light, vec4 object_diffuse_color) {
     float diff = max(dot(norm, light_dir), 0.0f);
     vec4 diffuse_color = vec4(diff * light.color, 1.0f) * object_diffuse_color;
 
-    return diffuse_color + calculateSpecular(light, light_dir);
+    diffuse_color += calculateSpecular(light, light_dir);
+    return clamp(diffuse_color, 0.0f, 1.0f);
 }
 
 
@@ -61,7 +62,9 @@ vec4 pointLight(wglLight light, vec4 object_diffuse_color) {
     float diff = max(dot(norm, light_dir), 0.0f);
     vec4 diffuse_color = vec4(diff * light.color * light.intensity, 1.0f) * object_diffuse_color;
 
-    return (diffuse_color + calculateSpecular(light, light_dir)) * attenuation;
+    diffuse_color += calculateSpecular(light, light_dir) * attenuation;
+
+    return clamp(diffuse_color, 0.0f, 1.0f);
 }
 
 vec4 spotLight(wglLight light, vec4 object_diffuse_color) {
@@ -72,7 +75,9 @@ vec4 spotLight(wglLight light, vec4 object_diffuse_color) {
     float epsilon = light.spot_inner_angle - light.spot_outer_angle;
     float spot_modifier = smoothstep(0.0, 1.0, (angle - light.spot_outer_angle) / epsilon);
 
-    return pointLight(light, object_diffuse_color) * spot_modifier;
+    vec4 diffuse_color = pointLight(light, object_diffuse_color) * spot_modifier;
+
+    return clamp(diffuse_color, 0.0f, 1.0f);
 }
 
 void main() {

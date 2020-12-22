@@ -104,10 +104,8 @@ export class Loader {
             vec3.copy(wglNode.scale, gltfNode.scale as unknown as vec3);
 
         if (gltfNode.rotation) {
-            let rotation = quat.create();
-            quat.copy(rotation, gltfNode.rotation as unknown as quat);
-            quat.normalize(rotation, rotation);
-            MathUtil.extractEuler(wglNode.rotation, rotation);
+            quat.copy(wglNode.rotation, gltfNode.rotation as unknown as quat);
+            quat.normalize(wglNode.rotation, wglNode.rotation);
         }
 
         if (gltfNode.matrix)
@@ -117,7 +115,7 @@ export class Loader {
             wglNode.name = gltfNode.name;
 
         if (gltfNode.hasOwnProperty("mesh")) {
-            wglNode.components.meshInstance = new MeshInstance(wglNode, await this._getMesh(gltfNode.mesh));
+            this._scene.createMeshInstance(wglNode, await this._getMesh(gltfNode.mesh));
         }
 
         return wglNode;
