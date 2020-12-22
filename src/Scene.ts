@@ -1,4 +1,4 @@
-import {Mesh, Primitive} from "./Mesh"
+import {Mesh, MeshInstance, Primitive} from "./Mesh"
 import {Renderer} from "./Renderer";
 import {Texture} from "./Texture"
 import {Node} from "./Node";
@@ -121,6 +121,12 @@ export class Scene {
         this.meshes.set(name, mesh);
 
         return mesh;
+    }
+
+    public createMeshInstance(node: Node, mesh: Mesh, materials?: Array<Material>): MeshInstance {
+        const meshInstance = this._renderer.createMeshInstance(node, mesh, materials);
+        node.components.meshInstance = meshInstance;
+        return meshInstance;
     }
 
     public createTextureFromImage(name: string, image: HTMLImageElement) {

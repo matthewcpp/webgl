@@ -115,7 +115,7 @@ export class Loader {
             wglNode.name = gltfNode.name;
 
         if (gltfNode.hasOwnProperty("mesh")) {
-            wglNode.components.meshInstance = new MeshInstance(wglNode, await this._getMesh(gltfNode.mesh));
+            this._scene.createMeshInstance(wglNode, await this._getMesh(gltfNode.mesh));
         }
 
         return wglNode;

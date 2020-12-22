@@ -1,12 +1,12 @@
 import {Camera} from "./Camera";
 import {Node} from "./Node";
 import {Shader} from "./Shader";
-import {dfsWalk} from "./Walk";
-import {Primitive} from "./Mesh";
+import {Mesh, MeshInstance, Primitive} from "./Mesh";
 import {ObjectUniformBuffer, UniformBuffer} from "./shader/UniformBuffer";
 import {Light, LightType} from "./Light";
 
 import {mat4, vec4} from "gl-matrix"
+import {Material} from "./Material";
 
 class DrawCall {
     public constructor(
@@ -24,9 +24,10 @@ export class Renderer {
     private readonly _uniformBuffer: UniformBuffer;
     private readonly _objectUniformBuffer: ObjectUniformBuffer;
 
-    private readonly _drawCalls = new Map<Shader, Array<DrawCall>>();
+    private readonly _drawCalls = new Map<Shader, DrawCall[]>();
 
-    private lights = new Array<Light>();
+    private lights: Light[] = [];
+    private meshInstances: MeshInstance[] = [];
 
     constructor(gl: WebGL2RenderingContext) {
         this.gl = gl;
@@ -50,25 +51,26 @@ export class Renderer {
     private prepareDraw(root: Node) {
         this._drawCalls.clear();
 
-        dfsWalk(root, (node: Node) => {
-            const meshInstance = node.components.meshInstance;
+        for (const meshInstance of this.meshInstances) {
+            for (let i  = 0; i < meshInstance.materials.length; i++) {
+                // Temporary
+                if (meshInstance.mesh.primitives[i].type != this.gl.TRIANGLES)
+                    return;
 
-            if (meshInstance) {
-                for (let i  = 0; i < meshInstance.materials.length; i++) {
-                    // Temporary
-                    if (meshInstance.mesh.primitives[i].type != this.gl.TRIANGLES)
-                        return;
+                const material = meshInstance.materials[i];
+                const drawCall = new DrawCall(material.params, meshInstance.mesh.primitives[i], meshInstance._node.worldMatrix);
 
-                    const material = meshInstance.materials[i];
-                    const drawCall = new DrawCall(material.params, meshInstance.mesh.primitives[i], node.worldMatrix);
-
-                    if (this._drawCalls.has(material.shader))
-                        this._drawCalls.get(material.shader).push(drawCall);
-                    else
-                        this._drawCalls.set(material.shader, [drawCall]);
-                }
+                if (this._drawCalls.has(material.shader))
+                    this._drawCalls.get(material.shader).push(drawCall);
+                else
+                    this._drawCalls.set(material.shader, [drawCall]);
             }
-        });
+        }
+    }
+
+    public createMeshInstance(node: Node, mesh: Mesh, materials?: Array<Material>): MeshInstance {
+        this.meshInstances.push(new MeshInstance(node, mesh, materials));
+        return this.meshInstances[this.meshInstances.length - 1];
     }
 
     public createLight(lightType: LightType, node: Node) {

@@ -41,7 +41,7 @@ export class Mesh {
 }
 
 export class MeshInstance {
-    private readonly _node: Node;
+    public readonly _node: Node;
     public readonly mesh: Mesh
     public materials: Array<Material>;
     public worldBounds = new Bounds();
