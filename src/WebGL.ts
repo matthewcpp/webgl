@@ -3,6 +3,7 @@ import {Behavior, FuncBehavior} from "./behaviors/Behavior";
 import {Bounds} from "./Bounds";
 import {Camera} from "./Camera";
 import {Components} from "./Components";
+import {Headlight} from "./behaviors/Headlight";
 import {Light, LightType} from "./Light";
 import {Loader} from "./GLTF/Loader.js";
 import {Material} from "./Material";
@@ -13,7 +14,7 @@ import {Shader, ShaderData} from "./Shader"
 import {Texture} from "./Texture";
 
 export {
-    Arcball,
+    Arcball, Headlight,
     Behavior, FuncBehavior,
     Bounds,
     Camera,
