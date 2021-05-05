@@ -10,13 +10,16 @@
     "@rollup/plugin-node-resolve": "^8.4.0",
     "@rollup/plugin-replace": "^2.3.3",
     "@types/gl-matrix": "^2.4.5",
+    "@types/node": "^13.7.1",
+    "fs-extra": "^8.1.0",
+    "mkdirp": "^1.0.4",
     "rollup": "^2.23.0",
     "rollup-plugin-typescript2": "^0.27.1",
-    "typescript": "^3.9.7",
-    "@types/node": "^13.7.1"
+    "typescript": "^3.9.7"
   },
   "scripts": {
-    "build": "npx rollup --config"
+    "build-core": "npx rollup --config core/rollup.config.js",
+    "build-example": "node build/build_example.js"
   },
   "files": [
     "dist/webgl.es.js",

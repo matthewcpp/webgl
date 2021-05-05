@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "module": "es6",
+        "baseUrl": ".",
+        "target": "es2017",
+        "lib": [
+            "es2017",
+            "dom"
+        ],
+        "paths": {
+            "webgl": ["../../core/WebGL.ts"]
+        },
+
+        "typeRoots": [
+            "../../node_modules"
+        ],
+        "types": ["gl-matrix"]
+    },
+    "files": [
+        "index.ts"
+    ]
+}
