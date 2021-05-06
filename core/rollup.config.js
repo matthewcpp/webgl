@@ -17,8 +17,11 @@ export default {
     output: [
         {
             file: pkg.module,
-            format: 'es'
-        },
+            format: 'es',
+            paths: {
+                "gl-matrix": "/gl-matrix/esm"
+            }
+        }
     ],
     external: [ "gl-matrix" ],
     plugins: [

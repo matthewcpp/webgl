@@ -19,7 +19,8 @@
   },
   "scripts": {
     "build-core": "npx rollup --config core/rollup.config.js",
-    "build-example": "node build/build_example.js"
+    "build-example": "node build/build_example.js",
+    "init-deps": "node build/init-deps.js"
   },
   "files": [
     "dist/webgl.es.js",
