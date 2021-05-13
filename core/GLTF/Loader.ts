@@ -34,17 +34,19 @@ export class Loader {
         }
     }
 
-    public async load(url: string) {
+    private async _requestResource(url: string) {
+        const response = await fetch(url);
+
+        if (response.status != 200)
+            throw new Error(`Unable to load gltf file at: ${url}`);
+
         const index = url.lastIndexOf("/");
         this._baseUrl = index >= 0 ? url.substring(0, index + 1) : "";
 
-        const request = await fetch(url);
+        return response;
+    }
 
-        if (request.status != 200)
-            throw new Error(`Unable to load gltf file at: ${url}`);
-
-        this._gltf = JSON.parse(await request.text()) as GLTF.Schema;
-
+    private async _load() {
         this._meshes = this._gltf.meshes ? new Array<Mesh>(this._gltf.meshes.length) : null;
         this._arrayBuffers = this._gltf.buffers ? new Array<ArrayBuffer>(this._gltf.buffers.length) : null;
         this._glBuffers = this._gltf.bufferViews ? new Array<WebGLBuffer>(this._gltf.bufferViews.length) : null;
@@ -55,6 +57,16 @@ export class Loader {
             return await this._loadScene(this._gltf.scenes[0]);
         else
             return null;
+    }
+
+    public async load(url: string) {
+        const response = await this._requestResource(url);
+        this._gltf = JSON.parse(await response.text()) as GLTF.Schema;
+        await this._load();
+    }
+
+    public async loadBinary(url: string) {
+        const response = await this._requestResource(url);
     }
 
     private async _loadScene(scene: GLTF.Scene) {

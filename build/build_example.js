@@ -48,7 +48,7 @@ async function main() {
         file: destJsPath,
         format: "es",
         paths: {
-            "gl-matrix": "/gl-matrix",
+            "gl-matrix": "/gl-matrix/index.js",
             "webgl": "/webgl.es.js"
         }
     }

@@ -22,7 +22,7 @@ export class Scene {
     public textures = new Map<string, WebGLTexture>();
     public mainCamera: Camera = null;
 
-    public readonly worldBounding = new Bounds();
+    public readonly worldBounding = Bounds.createFromMinMax(vec3.fromValues(-1.0, -1.0, -1.0), vec3.fromValues(1.0, 1.0, 1.0));
     public readonly defaultShaders = new DefaultShaders(this);
     public readonly rootNode = new Node("root");
 

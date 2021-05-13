@@ -19,7 +19,7 @@ export default {
             file: pkg.module,
             format: 'es',
             paths: {
-                "gl-matrix": "/gl-matrix/esm"
+                "gl-matrix": "/gl-matrix/index.js"
             }
         }
     ],
