@@ -19,9 +19,27 @@
             height: 100%;
             display: block;
         }
+
+        #picker {
+            position: absolute;
+            color: white;
+            top: 10px;
+            right: 10px;
+            font-size: x-large;
+        }
+
+        #model-select {
+            font-size: x-large;
+        }
     </style>
 </head>
 <body>
 <canvas id="gl-canvas"></canvas>
+<div id="picker">
+    <label for="model-select">Model:</label>
+    <select id="model-select">
+        <option selected>Cube</option>
+    </select>
+</div>
 </body>
 </html>

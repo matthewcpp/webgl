@@ -10,11 +10,7 @@
         "paths": {
             "webgl": ["../../core/WebGL.ts"]
         },
-
-        "typeRoots": [
-            "../../node_modules"
-        ],
-        "types": ["gl-matrix"]
+        "moduleResolution": "Node"
     },
     "files": [
         "index.ts"

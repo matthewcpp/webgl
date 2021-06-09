@@ -1,11 +1,10 @@
 import {Mesh, MeshInstance, Primitive} from "./Mesh"
 import {Renderer} from "./Renderer";
-import {Texture} from "./Texture"
+import {Textures} from "./Texture"
 import {Node} from "./Node";
 import {Camera} from "./Camera";
 import {Shader, ShaderData} from "./Shader";
 import {DefaultShaders} from "./shader/DefaultShaders";
-import {Behavior} from "./behaviors/Behavior";
 import {Material} from "./Material";
 import {Light, LightType} from "./Light";
 import {Bounds} from "./Bounds";
@@ -19,17 +18,12 @@ export class Scene {
 
     public shaders = new Map<string, Shader>();
     public meshes = new Map<string, Mesh>();
-    public textures = new Map<string, WebGLTexture>();
+    public textures: Textures;
     public mainCamera: Camera = null;
 
     public readonly worldBounding = Bounds.createFromMinMax(vec3.fromValues(-1.0, -1.0, -1.0), vec3.fromValues(1.0, 1.0, 1.0));
     public readonly defaultShaders = new DefaultShaders(this);
     public readonly rootNode = new Node("root");
-
-    public readonly _behaviors = new Array<Behavior>();
-
-    public deltaTime: number;
-    private _lastUpdateTime: DOMHighResTimeStamp = 0.0;
 
     public defaultMaterial: Material;
 
@@ -43,48 +37,33 @@ export class Scene {
             throw new Error("Unable to initialize WebGL 2.0");
         }
 
+        this.textures = new Textures(this.gl);
         this._renderer = new Renderer(this.gl);
     }
 
     public async init() {
-        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+        //this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
         this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
         this.gl.clearDepth(1.0);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
 
         this._createDefaultCamera();
-        Texture.createDefault(this.gl);
+        this.textures.createDefault();
         this.defaultMaterial = new Material(await this.defaultShaders.unlit());
     }
 
-    public start() {
-        requestAnimationFrame((timestamp: DOMHighResTimeStamp) => {
-            this._lastUpdateTime = timestamp;
-            this._mainLoop(timestamp);
+    public clear() {
+        Node.cleanupNode(this.rootNode);
+
+        this.meshes.forEach((mesh: Mesh) => {
+            mesh.freeGlResources(this.gl);
         });
+        this.meshes.clear();
+        this.textures.clear();
     }
 
-    private _mainLoop(currentTime: DOMHighResTimeStamp) {
-        this.deltaTime = (currentTime - this._lastUpdateTime) / 1000.0;
-        this._update();
-        this._drawScene()
-
-        this._lastUpdateTime = currentTime;
-
-        requestAnimationFrame((currentTime: DOMHighResTimeStamp) => {
-            this._mainLoop(currentTime);
-        });
-    }
-
-    private _update() {
-        for (const behavior of this._behaviors) {
-            if (behavior.active)
-                behavior.update();
-        }
-    }
-
-    private _drawScene() {
+    public draw() {
         const gl = this.gl;
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -117,7 +96,7 @@ export class Scene {
             throw new Error(`MeshBuffer with name: ${name} already exists.`);
         }
 
-        const mesh = new Mesh(geometry);
+        const mesh = new Mesh(name, geometry);
         this.meshes.set(name, mesh);
 
         return mesh;
@@ -127,28 +106,6 @@ export class Scene {
         const meshInstance = this._renderer.createMeshInstance(node, mesh, materials);
         node.components.meshInstance = meshInstance;
         return meshInstance;
-    }
-
-    public createTextureFromImage(name: string, image: HTMLImageElement) {
-        if (this.textures.has(name)) {
-            throw new Error(`Texture with ${name} already exists.`);
-        }
-
-        const texture = Texture.createFromImage(this.gl, image);
-        this.textures.set(name, texture);
-
-        return texture;
-    }
-
-    public createTextureFromRGBAData(name: string, width: number, height: number, data: ArrayBufferView) {
-        if (this.textures.has(name)) {
-            throw new Error(`Texture with ${name} already exists.`);
-        }
-
-        const texture = Texture.createFromRGBAData(this.gl, width, height, data);
-        this.textures.set(name, texture);
-
-        return texture;
     }
 
     public createLight(lightType: LightType, node: Node): Light {

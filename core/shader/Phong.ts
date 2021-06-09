@@ -1,5 +1,5 @@
 import {DefaultAttributeLocations, ShaderInterface} from "../Shader.js";
-import {Texture} from "../Texture.js";
+import {Texture, Textures} from "../Texture.js";
 
 import {vec4} from "gl-matrix"
 
@@ -55,9 +55,9 @@ export class PhongShader implements ShaderInterface {
 }
 
 export interface PhongTexturedParams extends PhongParams{
-    diffuseTexture: WebGLTexture;
-    sepcularMap: WebGLTexture;
-    emissionMap: WebGLTexture;
+    diffuseTexture: Texture;
+    sepcularMap: Texture;
+    emissionMap: Texture;
 }
 
 export class PhongTexturedShader extends PhongShader {
@@ -87,23 +87,23 @@ export class PhongTexturedShader extends PhongShader {
 
         const phongParams = params as PhongTexturedParams;
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, phongParams.diffuseTexture);
+        gl.bindTexture(gl.TEXTURE_2D, phongParams.diffuseTexture.handle);
         gl.uniform1i(this._diffuse_sampler, 0);
 
         gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, phongParams.sepcularMap);
+        gl.bindTexture(gl.TEXTURE_2D, phongParams.sepcularMap.handle);
         gl.uniform1i(this._specular_sampler, 1);
 
         gl.activeTexture(gl.TEXTURE2);
-        gl.bindTexture(gl.TEXTURE_2D, phongParams.emissionMap);
+        gl.bindTexture(gl.TEXTURE_2D, phongParams.emissionMap.handle);
         gl.uniform1i(this._emission_sampler, 2);
     }
 
     createParams(): Object {
         const params = super.createParams() as PhongTexturedParams;
-        params.diffuseTexture = Texture.defaultWhite;
-        params.sepcularMap = Texture.defaultWhite;
-        params.emissionMap = Texture.defaultBlack;
+        params.diffuseTexture = Textures.defaultWhite;
+        params.sepcularMap = Textures.defaultWhite;
+        params.emissionMap = Textures.defaultBlack;
 
         return params;
     }

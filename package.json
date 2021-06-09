@@ -4,6 +4,7 @@
   "types": "dist/webgl.d.ts",
   "version": "0.1.0",
   "dependencies": {
+    "@matthewcpp/binary-gltf": "^0.1.0",
     "gl-matrix": "^3.2.1"
   },
   "devDependencies": {

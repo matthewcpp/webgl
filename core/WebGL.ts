@@ -1,5 +1,4 @@
 import {Arcball} from "./behaviors/Arcball";
-import {Behavior, FuncBehavior} from "./behaviors/Behavior";
 import {Bounds} from "./Bounds";
 import {Camera} from "./Camera";
 import {Components} from "./Components";
@@ -15,7 +14,6 @@ import {Texture} from "./Texture";
 
 export {
     Arcball, Headlight,
-    Behavior, FuncBehavior,
     Bounds,
     Camera,
     Components,

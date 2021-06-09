@@ -26,7 +26,7 @@ export class ElementBuffer {
 export class Primitive {
     public constructor(
         public type: number,
-        public indices: ElementBuffer = null,
+        public indices: ElementBuffer,
         public attributes: Array<Attribute>,
         public bounds: Bounds,
         public baseMaterial: Material,
@@ -36,8 +36,25 @@ export class Primitive {
 
 export class Mesh {
     public constructor(
+        public readonly name: string,
         public readonly primitives: Primitive[]
     ){}
+
+    public freeGlResources(gl: WebGL2RenderingContext) {
+        const buffers = new Set<WebGLBuffer>();
+
+        for (const primitive of this.primitives) {
+            buffers.add(primitive.indices.buffer);
+
+            for (const attribute of primitive.attributes) {
+                buffers.add(attribute.buffer);
+            }
+        }
+
+        buffers.forEach((buffer)=> {
+            gl.deleteBuffer(buffer);
+        });
+    }
 }
 
 export class MeshInstance {

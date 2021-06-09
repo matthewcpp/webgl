@@ -2,6 +2,8 @@ import {glMatrix, quat, vec3} from "gl-matrix";
 import {Arcball, Headlight, Loader, LightType, Node, Scene} from "webgl"
 
 let webGl: Scene = null;
+let arcball: Arcball = null;
+let headlight: Headlight = null;
 
 async function initScene() {
     glMatrix.setMatrixArrayType(Array);
@@ -22,23 +24,29 @@ async function initScene() {
     directionalLight.updateMatrix();
     webGl.rootNode.addChild(directionalLight);
 
-    const arcball = new Arcball(webGl.mainCamera.node, webGl);
+    arcball = new Arcball(webGl.mainCamera.node, webGl);
     arcball.setInitial(webGl.worldBounding);
-    webGl.mainCamera.node.components.behavior = arcball;
     webGl.mainCamera.near = 0.01;
     webGl.mainCamera.far = 1000
 
-    directionalLight.components.behavior = new Headlight(directionalLight, webGl.mainCamera.node, webGl);
+    headlight = new Headlight(directionalLight, webGl.mainCamera.node);
+}
 
-    webGl.start();
+function tick(timestamp: DOMHighResTimeStamp) {
+    headlight.update();
+    arcball.update(timestamp);
+    webGl.draw();
+    requestAnimationFrame(tick);
 }
 
 window.onload = async () => {
     await initScene();
 
     const loader = new Loader(webGl);
-    await loader.load("https://webgl-models.s3-us-west-1.amazonaws.com/Cube/Cube.gltf");
+    await loader.load("https://webgl-models.s3-us-west-1.amazonaws.com/Buggy/Buggy.gltf");
+    //await loader.load("https://webgl-models.s3-us-west-1.amazonaws.com/Cube/Cube.gltf");
+    //await loader.loadBinary("https://webgl-models.s3-us-west-1.amazonaws.com/TextureCoordinateTest.glb");
 
-    const arcball = webGl.mainCamera.node.components.behavior as Arcball;
     arcball.setInitial(webGl.calculateWorldBounding());
+    requestAnimationFrame(tick);
 }

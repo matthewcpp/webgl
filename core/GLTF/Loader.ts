@@ -4,20 +4,22 @@ import {Node} from "../Node";
 import {Attribute, ElementBuffer, Mesh, MeshInstance, Primitive} from "../Mesh";
 import {Material} from "../Material.js";
 import {DefaultAttributeLocations} from "../Shader";
-import {downloadImage} from "../Util";
 import {Bounds} from "../Bounds";
 import {PhongParams, PhongTexturedParams} from "../shader/Phong";
-import {MathUtil} from "../MathUtil"
+import {BinaryGltf} from "@matthewcpp/binary-gltf";
 
 import {vec3, vec4, quat, mat4} from "gl-matrix"
+import {Texture} from "../Texture";
 
 export class Loader {
     private _baseUrl: string;
     private _gltf: GLTF.Schema = null;
+    private _glb: BinaryGltf = null;
     private _meshes: Mesh[] = null;
-    private _arrayBuffers: ArrayBuffer[] = null;
+    private _arrayBuffers: DataView[] = null;
+    private _bufferViews: DataView[] = null;
     private _glBuffers: WebGLBuffer[] = null;
-    private _textures: WebGLTexture[] = null;
+    private _textures: Texture[] = null;
     private _materials: Material[] = null;
 
     public autoscaleScene = true;
@@ -48,9 +50,10 @@ export class Loader {
 
     private async _load() {
         this._meshes = this._gltf.meshes ? new Array<Mesh>(this._gltf.meshes.length) : null;
-        this._arrayBuffers = this._gltf.buffers ? new Array<ArrayBuffer>(this._gltf.buffers.length) : null;
+        this._arrayBuffers = this._gltf.buffers ? new Array<DataView>(this._gltf.buffers.length) : null;
+        this._bufferViews = this._gltf.bufferViews ? new Array<DataView>(this._gltf.bufferViews.length) : null;
         this._glBuffers = this._gltf.bufferViews ? new Array<WebGLBuffer>(this._gltf.bufferViews.length) : null;
-        this._textures = this._gltf.images ? new Array<WebGLTexture>(this._gltf.images.length) : null;
+        this._textures = this._gltf.images ? new Array<Texture>(this._gltf.images.length) : null;
         this._materials = this._gltf.materials ? new Array<Material>(this._gltf.materials.length) : null;
 
         if (this._gltf.scenes && this._gltf.scenes.length > 0)
@@ -67,6 +70,11 @@ export class Loader {
 
     public async loadBinary(url: string) {
         const response = await this._requestResource(url);
+
+        this._glb = BinaryGltf.parse(await response.arrayBuffer());
+        this._gltf = this._glb.json as GLTF.Schema;
+
+        await this._load();
     }
 
     private async _loadScene(scene: GLTF.Scene) {
@@ -245,7 +253,7 @@ export class Loader {
             accessor.count,
             accessor.byteOffset,
             bufferView.byteStride ? bufferView.byteStride : 0,
-            await this._getBufferView(accessor.bufferView)
+            await this._createGlBufferFromView(accessor.bufferView)
         );
     }
 
@@ -256,21 +264,31 @@ export class Loader {
             Loader._getComponentType(accessor.componentType, this._scene.gl),
             accessor.count,
             accessor.byteOffset,
-            await this._getBufferView(accessor.bufferView)
+            await this._createGlBufferFromView(accessor.bufferView)
         );
     }
 
     private async _getBufferView(index: number) {
-        if (!this._glBuffers[index]) {
+        if (!this._bufferViews[index]) {
             const bufferView = this._gltf.bufferViews[index];
-            const arrayBuffer = await this._getBuffer(bufferView.buffer);
-            const typedArray = new Uint8Array(arrayBuffer, bufferView.byteOffset, bufferView.byteLength);
+            const buffer = await this._getBuffer(bufferView.buffer);
+
+            this._bufferViews[index] = new DataView(buffer.buffer, bufferView.byteOffset + buffer.byteOffset, bufferView.byteLength);
+        }
+
+        return this._bufferViews[index];
+    }
+
+    private async _createGlBufferFromView(index: number) {
+        if (!this._glBuffers[index]) {
+            const gltfBufferView = this._gltf.bufferViews[index];
+            const bufferView = await this._getBufferView(index);
 
             const gl = this._scene.gl;
-            const target = bufferView.target === GLTF.BufferViewTarget.ArrayBuffer ? gl.ARRAY_BUFFER : gl.ELEMENT_ARRAY_BUFFER;
+            const target = gltfBufferView.target === GLTF.BufferViewTarget.ArrayBuffer ? gl.ARRAY_BUFFER : gl.ELEMENT_ARRAY_BUFFER;
             const glBuffer = gl.createBuffer();
             gl.bindBuffer(target, glBuffer);
-            gl.bufferData(target, typedArray, gl.STATIC_DRAW);
+            gl.bufferData(target, bufferView, gl.STATIC_DRAW);
 
             this._glBuffers[index] = glBuffer;
         }
@@ -289,11 +307,17 @@ export class Loader {
         if (!this._arrayBuffers[index]){
             const buffer = this._gltf.buffers[index];
 
-            const response = await fetch(this._getFetchUri(buffer.uri));
-            if (response.status != 200) {
-                throw new Error(`unable to fetch buffer: ${buffer.uri}`);
+            // if the buffer does not have a URI, then we are loading from GLB
+            if (index === 0 && this._glb !== null && !buffer.uri) {
+                this._arrayBuffers[index] = this._glb.binary;
             }
-            this._arrayBuffers[index] = await response.arrayBuffer();
+            else {
+                const response = await fetch(this._getFetchUri(buffer.uri));
+                if (response.status != 200) {
+                    throw new Error(`unable to fetch buffer: ${buffer.uri}`);
+                }
+                this._arrayBuffers[index] = new DataView(await response.arrayBuffer());
+            }
         }
 
         return this._arrayBuffers[index];
@@ -333,7 +357,15 @@ export class Loader {
     private async _getTexture(index: number) {
         if (!this._textures[index]) {
             const image = this._gltf.images[index];
-            this._textures[index] = this._scene.createTextureFromImage(index.toString(), await downloadImage(this._getFetchUri(image.uri)));
+
+            if (image.bufferView) {
+                const bufferView = await this._getBufferView(image.bufferView);
+                this._textures[index] = await this._scene.textures.createFromBuffer(bufferView, image.mimeType);
+            }
+            else {
+                this._textures[index] = await this._scene.textures.createFromUrl(this._getFetchUri(image.uri));
+            }
+
         }
         return this._textures[index];
     }

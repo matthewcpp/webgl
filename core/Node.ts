@@ -86,4 +86,11 @@ export class Node {
         mat4.getRotation(this.rotation, lookAtMatrix);
         quat.normalize(this.rotation, this.rotation);
     }
+
+    static cleanupNode(node: Node) {
+        node.parent = null;
+
+        for (const child of node.children)
+            Node.cleanupNode(child);
+    }
 }
