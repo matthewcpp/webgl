@@ -1,4 +1,4 @@
-import {Mesh, MeshInstance, Primitive} from "./Mesh"
+import {Mesh, Meshes, MeshInstance, Primitive} from "./Mesh"
 import {Renderer} from "./Renderer";
 import {Textures} from "./Texture"
 import {Node} from "./Node";
@@ -17,7 +17,7 @@ export class Scene {
     private readonly _renderer: Renderer;
 
     public shaders = new Map<string, Shader>();
-    public meshes = new Map<string, Mesh>();
+    public meshes: Meshes;
     public textures: Textures;
     public mainCamera: Camera = null;
 
@@ -38,11 +38,11 @@ export class Scene {
         }
 
         this.textures = new Textures(this.gl);
+        this.meshes = new Meshes(this.gl);
         this._renderer = new Renderer(this.gl);
     }
 
     public async init() {
-        //this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
         this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
         this.gl.clearDepth(1.0);
         this.gl.enable(this.gl.DEPTH_TEST);
@@ -56,9 +56,6 @@ export class Scene {
     public clear() {
         Node.cleanupNode(this.rootNode);
 
-        this.meshes.forEach((mesh: Mesh) => {
-            mesh.freeGlResources(this.gl);
-        });
         this.meshes.clear();
         this.textures.clear();
     }
@@ -89,17 +86,6 @@ export class Scene {
         this.shaders.set(name, shader);
 
         return shader;
-    }
-
-    public createMesh(name: string, geometry: Primitive[]) {
-        if (this.meshes.has(name)) {
-            throw new Error(`MeshBuffer with name: ${name} already exists.`);
-        }
-
-        const mesh = new Mesh(name, geometry);
-        this.meshes.set(name, mesh);
-
-        return mesh;
     }
 
     public createMeshInstance(node: Node, mesh: Mesh, materials?: Array<Material>): MeshInstance {

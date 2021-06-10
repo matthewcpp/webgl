@@ -172,8 +172,7 @@ export class Loader {
                 primitives.push(new Primitive(type, indicesBuffer, attributes, bounds, baseMaterial));
             }
 
-            const name = gltfMesh.name ? gltfMesh.name : index.toString();
-            this._meshes[index] = this._scene.createMesh(name, primitives);
+            this._meshes[index] = this._scene.meshes.create(primitives);
         }
 
         return this._meshes[index];

@@ -36,7 +36,6 @@ export class Primitive {
 
 export class Mesh {
     public constructor(
-        public readonly name: string,
         public readonly primitives: Primitive[]
     ){}
 
@@ -54,6 +53,29 @@ export class Mesh {
         buffers.forEach((buffer)=> {
             gl.deleteBuffer(buffer);
         });
+    }
+}
+
+export class Meshes {
+    _meshes = new Set<Mesh>();
+
+    public constructor(
+        private _gl: WebGL2RenderingContext
+    ) {}
+
+    create(primitives: Primitive[]) {
+        const mesh = new Mesh(primitives);
+        this._meshes.add(mesh);
+
+        return mesh;
+    }
+
+    clear() {
+        this._meshes.forEach((mesh: Mesh) => {
+            mesh.freeGlResources(this._gl);
+        });
+
+        this._meshes.clear();
     }
 }
 
