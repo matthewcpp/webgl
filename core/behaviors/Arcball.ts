@@ -37,9 +37,6 @@ export class Arcball {
             const deltaY = this._currentPos[1] - this._previousPos[1];
 
             const deltaTime = (updateTime - this._previousTime) / 1000;
-
-            console.log(deltaX, deltaY, deltaTime);
-
             this._orbit(deltaX, deltaY, deltaTime);
             vec2.copy(this._previousPos, this._currentPos);
         }

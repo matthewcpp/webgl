@@ -6,7 +6,8 @@ import {Headlight} from "./behaviors/Headlight";
 import {Light, LightType} from "./Light";
 import {Loader} from "./GLTF/Loader.js";
 import {Material} from "./Material";
-import {Mesh, MeshInstance, Attribute, ElementBuffer, Primitive} from "./Mesh";
+import {Mesh, Attribute, ElementBuffer, Primitive} from "./Mesh";
+import {MeshInstance} from "./MeshInstance";
 import {Node} from "./Node"
 import {Scene} from "./Scene";
 import {Shader, ShaderData} from "./Shader"

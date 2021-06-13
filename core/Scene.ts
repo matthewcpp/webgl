@@ -1,4 +1,5 @@
-import {Mesh, Meshes, MeshInstance, Primitive} from "./Mesh"
+import {Mesh, Meshes} from "./Mesh"
+import {MeshInstances} from "./MeshInstance";
 import {Renderer} from "./Renderer";
 import {Textures} from "./Texture"
 import {Node} from "./Node";
@@ -18,6 +19,7 @@ export class Scene {
 
     public shaders = new Map<string, Shader>();
     public meshes: Meshes;
+    public meshInstances: MeshInstances;
     public textures: Textures;
     public mainCamera: Camera = null;
 
@@ -37,9 +39,10 @@ export class Scene {
             throw new Error("Unable to initialize WebGL 2.0");
         }
 
+        this._renderer = new Renderer(this.gl);
         this.textures = new Textures(this.gl);
         this.meshes = new Meshes(this.gl);
-        this._renderer = new Renderer(this.gl);
+        this.meshInstances = new MeshInstances(this._renderer);
     }
 
     public async init() {
@@ -58,6 +61,7 @@ export class Scene {
 
         this.meshes.clear();
         this.textures.clear();
+        this._renderer.clear();
     }
 
     public draw() {
@@ -86,12 +90,6 @@ export class Scene {
         this.shaders.set(name, shader);
 
         return shader;
-    }
-
-    public createMeshInstance(node: Node, mesh: Mesh, materials?: Array<Material>): MeshInstance {
-        const meshInstance = this._renderer.createMeshInstance(node, mesh, materials);
-        node.components.meshInstance = meshInstance;
-        return meshInstance;
     }
 
     public createLight(lightType: LightType, node: Node): Light {

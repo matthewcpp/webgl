@@ -1,7 +1,7 @@
 import {Scene} from "../Scene";
 import * as GLTF from "./Schema";
 import {Node} from "../Node";
-import {Attribute, ElementBuffer, Mesh, MeshInstance, Primitive} from "../Mesh";
+import {Attribute, ElementBuffer, Mesh, Primitive} from "../Mesh";
 import {Material} from "../Material.js";
 import {DefaultAttributeLocations} from "../Shader";
 import {Bounds} from "../Bounds";
@@ -135,7 +135,7 @@ export class Loader {
             wglNode.name = gltfNode.name;
 
         if (gltfNode.hasOwnProperty("mesh")) {
-            this._scene.createMeshInstance(wglNode, await this._getMesh(gltfNode.mesh));
+            this._scene.meshInstances.create(wglNode, await this._getMesh(gltfNode.mesh));
         }
 
         return wglNode;

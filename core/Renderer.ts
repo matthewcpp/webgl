@@ -1,7 +1,8 @@
 import {Camera} from "./Camera";
 import {Node} from "./Node";
 import {Shader} from "./Shader";
-import {Mesh, MeshInstance, Primitive} from "./Mesh";
+import {Mesh, Primitive} from "./Mesh";
+import {MeshInstance} from "./MeshInstance";
 import {ObjectUniformBuffer, UniformBuffer} from "./shader/UniformBuffer";
 import {Light, LightType} from "./Light";
 
@@ -27,7 +28,7 @@ export class Renderer {
     private readonly _drawCalls = new Map<Shader, DrawCall[]>();
 
     private lights: Light[] = [];
-    private meshInstances: MeshInstance[] = [];
+    private _meshInstances: MeshInstance[] = [];
 
     constructor(gl: WebGL2RenderingContext) {
         this.gl = gl;
@@ -51,14 +52,14 @@ export class Renderer {
     private prepareDraw(root: Node) {
         this._drawCalls.clear();
 
-        for (const meshInstance of this.meshInstances) {
+        for (const meshInstance of this._meshInstances) {
             for (let i  = 0; i < meshInstance.materials.length; i++) {
                 // Temporary
                 if (meshInstance.mesh.primitives[i].type != this.gl.TRIANGLES)
                     return;
 
                 const material = meshInstance.materials[i];
-                const drawCall = new DrawCall(material.params, meshInstance.mesh.primitives[i], meshInstance._node.worldMatrix);
+                const drawCall = new DrawCall(material.params, meshInstance.mesh.primitives[i], meshInstance.node.worldMatrix);
 
                 if (this._drawCalls.has(material.shader))
                     this._drawCalls.get(material.shader).push(drawCall);
@@ -69,8 +70,12 @@ export class Renderer {
     }
 
     public createMeshInstance(node: Node, mesh: Mesh, materials?: Array<Material>): MeshInstance {
-        this.meshInstances.push(new MeshInstance(node, mesh, materials));
-        return this.meshInstances[this.meshInstances.length - 1];
+        this._meshInstances.push(new MeshInstance(node, mesh, materials));
+        return this._meshInstances[this._meshInstances.length - 1];
+    }
+
+    public clear() {
+        this._meshInstances = [];
     }
 
     public createLight(lightType: LightType, node: Node) {
