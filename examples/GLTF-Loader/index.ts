@@ -7,7 +7,7 @@ let headlight: Headlight = null;
 
 async function initScene() {
     glMatrix.setMatrixArrayType(Array);
-    let glCanvas = document.querySelector("#gl-canvas") as HTMLCanvasElement;
+    const glCanvas = document.querySelector("#gl-canvas") as HTMLCanvasElement;
     glCanvas.oncontextmenu = () => false;
 
     webGl = new Scene(glCanvas);
@@ -32,6 +32,31 @@ async function initScene() {
     headlight = new Headlight(directionalLight, webGl.mainCamera.node);
 }
 
+const modelDomain = "https://webgl-models.s3-us-west-1.amazonaws.com/";
+
+async function loadModel(modelPath: string) {
+    const loader = new Loader(webGl);
+    const isBinary = modelPath.endsWith(".glb");
+    const modelUrl = modelDomain + modelPath;
+
+    console.log(`Loading Model: ${modelUrl}`);
+
+    if (isBinary)
+        await loader.loadBinary(modelUrl);
+    else
+        await loader.load(modelUrl);
+
+    arcball.setInitial(webGl.calculateWorldBounding());
+}
+
+function initUi() {
+    const modelSelector = document.querySelector("#model-select") as HTMLSelectElement;
+    modelSelector.onchange = async () => {
+        webGl.clear();
+        await loadModel(modelSelector.value);
+    }
+}
+
 function tick(timestamp: DOMHighResTimeStamp) {
     headlight.update();
     arcball.update(timestamp);
@@ -41,12 +66,9 @@ function tick(timestamp: DOMHighResTimeStamp) {
 
 window.onload = async () => {
     await initScene();
+    initUi();
 
-    const loader = new Loader(webGl);
-    await loader.load("https://webgl-models.s3-us-west-1.amazonaws.com/Buggy/Buggy.gltf");
-    //await loader.load("https://webgl-models.s3-us-west-1.amazonaws.com/Cube/Cube.gltf");
-    //await loader.loadBinary("https://webgl-models.s3-us-west-1.amazonaws.com/TextureCoordinateTest.glb");
+    await loadModel("Cube/Cube.gltf");
 
-    arcball.setInitial(webGl.calculateWorldBounding());
     requestAnimationFrame(tick);
 }

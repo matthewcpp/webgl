@@ -138,6 +138,13 @@ export class Renderer {
 
             this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, drawCall.primitive.indices.buffer);
             this.gl.drawElements(drawCall.primitive.type, drawCall.primitive.indices.count, drawCall.primitive.indices.componentType, drawCall.primitive.indices.offset);
+
+            for (const attribute of drawCall.primitive.attributes) {
+                if (shaderAttributes.indexOf(attribute.index) < 0)
+                    continue;
+
+                this.gl.disableVertexAttribArray(attribute.index);
+            }
         }
     }
 }
