@@ -27,5 +27,10 @@
   "files": [
     "dist/webgl.es.js",
     "dist/webgl.d.ts"
-  ]
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matthewcpp/webgl"
+  }
 }
