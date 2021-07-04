@@ -1,23 +1,19 @@
-#version 300 es
-
-precision mediump float;
-precision mediump int;
-
-#include "wgl.h.glsl"
-
 out vec4 final_color;
-uniform vec4 frag_color;
+uniform vec4 diffuse_color;
 
-#ifdef WGL_TEXTURE_COORDS
+#ifdef WGL_TEXTURE_COORDS0
 in vec2 wgl_tex_coords0;
-uniform sampler2D sampler0;
+#endif
+
+#ifdef WGL_UNLIT_DIFFUSE_MAP
+uniform sampler2D diffuse_sampler;
 #endif
 
 void main() {
-    #ifdef WGL_TEXTURE_COORDS
-        final_color = texture(sampler0, wgl_tex_coords0) * frag_color;
+    #if defined(WGL_TEXTURE_COORDS0) && defined(WGL_UNLIT_DIFFUSE_MAP)
+        final_color = texture(diffuse_sampler, wgl_tex_coords0) * diffuse_color;
     #else
-        final_color = frag_color;
+        final_color = diffuse_color;
     #endif
 }
 

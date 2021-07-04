@@ -1,4 +1,4 @@
-import {Light} from "../Light";
+import {Light, Lights} from "../Light";
 
 import {mat4, vec3, vec4} from "gl-matrix"
 
@@ -53,7 +53,7 @@ export class UniformBuffer {
 
     private static baseDataSize = 40 * 4;
     private static lightStructSize = 16 * 4;
-    static maxLightCount = 5;
+
 
     private readonly _data: ArrayBuffer;
 
@@ -77,7 +77,7 @@ export class UniformBuffer {
     }
 
     public get sizeInBytes() {
-        return UniformBuffer.baseDataSize + (UniformBuffer.lightStructSize * UniformBuffer.maxLightCount);
+        return UniformBuffer.baseDataSize + (UniformBuffer.lightStructSize * Lights.maxLightCount);
     }
 
     // upload the latest standard shader data to the gl buffer on gpu

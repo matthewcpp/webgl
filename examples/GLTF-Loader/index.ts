@@ -1,11 +1,32 @@
-import {glMatrix, quat} from "gl-matrix";
-import {Arcball, Headlight, Loader, LightType, Node, Scene} from "webgl"
+import {glMatrix} from "gl-matrix";
+import {Arcball, Headlight, Loader, Scene} from "webgl"
 
 let webGl: Scene = null;
+let arcball: Arcball = null;
+let headlight: Headlight = null;
 
-window.onload = async () => {
+const modelDomain = "https://webgl-models.s3-us-west-1.amazonaws.com/";
+
+async function loadModel(modelPath: string) {
+    const loader = new Loader(webGl);
+    const isBinary = modelPath.endsWith(".glb");
+    const modelUrl = modelDomain + modelPath;
+
+    console.log(`Loading Model: ${modelUrl}`);
+
+    if (isBinary)
+        await loader.loadBinary(modelUrl);
+    else
+        await loader.load(modelUrl);
+
+    arcball = new Arcball(webGl.mainCamera.node, webGl);
+    headlight = new Headlight(webGl.lights.items[0].node, webGl.mainCamera.node);
+    arcball.setInitial(webGl.calculateWorldBounding());
+}
+
+async function initScene() {
     glMatrix.setMatrixArrayType(Array);
-    let glCanvas = document.querySelector("#gl-canvas") as HTMLCanvasElement;
+    const glCanvas = document.querySelector("#gl-canvas") as HTMLCanvasElement;
     glCanvas.oncontextmenu = () => false;
 
     webGl = new Scene(glCanvas);
@@ -14,27 +35,30 @@ window.onload = async () => {
     window.onresize = () => {
         webGl.canvasResized();
     }
+}
 
-    const loader = new Loader(webGl);
-    await loader.load("OrientationTest/OrientationTest.gltf");
-    //await loader.load(modelUrl("Cube/Cube.gltf"));
+function initUi() {
+    const modelSelector = document.querySelector("#model-select") as HTMLSelectElement;
+    modelSelector.onchange = async () => {
+        webGl.clear();
+        webGl.createDefault();
 
-    const directionalLight = new Node();
-    directionalLight.components.light = webGl.createLight(LightType.Directional, directionalLight);
-    directionalLight.position = [0.0, 3, 0.0];
-    quat.fromEuler(directionalLight.rotation, 50.0, -30.0, 0.0);
-    directionalLight.updateMatrix();
-    webGl.rootNode.addChild(directionalLight);
+        await loadModel(modelSelector.value);
+    }
+}
 
-    const updatedWorldBounding = webGl.calculateWorldBounding();
+function tick(timestamp: DOMHighResTimeStamp) {
+    headlight.update();
+    arcball.update(timestamp);
+    webGl.draw();
+    requestAnimationFrame(tick);
+}
 
-    const arcball = new Arcball(webGl.mainCamera.node, webGl);
-    arcball.setInitial(updatedWorldBounding);
-    webGl.mainCamera.node.components.behavior = arcball;
-    webGl.mainCamera.near = 0.01;
-    webGl.mainCamera.far = 1000
+window.onload = async () => {
+    await initScene();
+    initUi();
 
-    directionalLight.components.behavior = new Headlight(directionalLight, webGl.mainCamera.node, webGl);
+    await loadModel("Cube/Cube.gltf");
 
-    webGl.start();
+    requestAnimationFrame(tick);
 }

@@ -1,5 +1,4 @@
 import {Arcball} from "./behaviors/Arcball";
-import {Behavior, FuncBehavior} from "./behaviors/Behavior";
 import {Bounds} from "./Bounds";
 import {Camera} from "./Camera";
 import {Components} from "./Components";
@@ -7,15 +6,15 @@ import {Headlight} from "./behaviors/Headlight";
 import {Light, LightType} from "./Light";
 import {Loader} from "./GLTF/Loader.js";
 import {Material} from "./Material";
-import {Mesh, MeshInstance, Attribute, ElementBuffer, Primitive} from "./Mesh";
+import {Mesh, Attribute, ElementBuffer, Primitive} from "./Mesh";
+import {MeshInstance} from "./MeshInstance";
 import {Node} from "./Node"
 import {Scene} from "./Scene";
-import {Shader, ShaderData} from "./Shader"
+import {Shader, ShaderProgram} from "./Shader"
 import {Texture} from "./Texture";
 
 export {
     Arcball, Headlight,
-    Behavior, FuncBehavior,
     Bounds,
     Camera,
     Components,
@@ -25,6 +24,6 @@ export {
     Mesh, MeshInstance, Attribute, ElementBuffer, Primitive,
     Node,
     Scene,
-    Shader, ShaderData,
+    Shader, ShaderProgram,
     Texture
 }

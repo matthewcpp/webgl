@@ -4,6 +4,7 @@
   "types": "dist/webgl.d.ts",
   "version": "0.1.0",
   "dependencies": {
+    "@matthewcpp/binary-gltf": "^0.1.0",
     "gl-matrix": "^3.2.1"
   },
   "devDependencies": {
@@ -20,10 +21,16 @@
   "scripts": {
     "build-core": "npx rollup --config core/rollup.config.js",
     "build-example": "node build/build_example.js",
-    "init-deps": "node build/init-deps.js"
+    "init-deps": "node build/init-deps.js",
+    "server": "npx http-server dist"
   },
   "files": [
     "dist/webgl.es.js",
     "dist/webgl.d.ts"
-  ]
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matthewcpp/webgl"
+  }
 }

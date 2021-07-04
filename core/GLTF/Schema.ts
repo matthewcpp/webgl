@@ -90,7 +90,9 @@ export interface Asset {
 }
 
 export interface Image {
-    uri: string;
+    uri?: string;
+    bufferView?: number;
+    mimeType?: string;
 }
 
 export interface Schema {

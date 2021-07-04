@@ -9,10 +9,7 @@
       "es2017",
       "dom"
     ],
-    "typeRoots": [
-      "../node_modules"
-    ],
-    "types": ["gl-matrix"]
+    "moduleResolution": "Node"
   },
   "include": [
     "./**/*.ts"

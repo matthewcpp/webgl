@@ -1,25 +1,29 @@
-import {Behavior} from "./Behavior.js";
 import {Scene} from "../Scene.js";
 import {Node} from "../Node.js"
 import {Bounds} from "../Bounds.js";
 
-import {vec3, quat} from "gl-matrix";
+import {vec2, vec3, quat} from "gl-matrix";
 
-export class Arcball extends Behavior {
-    private _dragging = false;
+export class Arcball {
     private _distance = 0.0;
     private _diagonal = 0.0;
     private _rotX = 0.0;
     private _rotY = 0.0;
     private _target = vec3.create();
 
-    public rotationSpeed = 180.0;
+    public rotationSpeed = 90.0;
+    private _dragging = false;
+
+    private _previousTime = performance.now();
+    private _previousPos = vec2.create();
+    private _currentPos = vec2.create();
 
     private _cameraNode: Node;
+    private _scene: Scene;
 
     public constructor(cameraNode: Node, scene: Scene){
-        super(scene);
         this._cameraNode = cameraNode;
+        this._scene = scene;
 
         scene.canvas.onpointerdown = (event: PointerEvent) => { this._onPointerDown(event); }
         scene.canvas.onpointermove = (event:PointerEvent) => { this._onPointerMove(event); }
@@ -27,7 +31,18 @@ export class Arcball extends Behavior {
         scene.canvas.onwheel = (event: WheelEvent) => { this._onWheel(event); }
     }
 
-    update(): void {}
+    public update(updateTime: number) {
+        if (this._dragging && !vec2.equals(this._previousPos, this._currentPos)) {
+            const deltaX = this._currentPos[0] - this._previousPos[0];
+            const deltaY = this._currentPos[1] - this._previousPos[1];
+
+            const deltaTime = (updateTime - this._previousTime) / 1000;
+            this._orbit(deltaX, deltaY, deltaTime);
+            vec2.copy(this._previousPos, this._currentPos);
+        }
+
+        this._previousTime = updateTime;
+    }
 
     public setInitial(worldBounding: Bounds) {
         this._target = worldBounding.center();
@@ -39,11 +54,11 @@ export class Arcball extends Behavior {
         this._setCameraPos();
     }
 
-    private _orbit(deltaX: number, deltaY:number) {
-        const rotationAmount = this.rotationSpeed * this._scene.deltaTime
+    private _orbit(deltaX: number, deltaY:number, deltaTime: number) {
+        const rotationAmount = this.rotationSpeed * deltaTime
 
-        this._rotY += deltaX * rotationAmount;
-        this._rotX += deltaY * rotationAmount;
+        this._rotY -= deltaX * rotationAmount;
+        this._rotX -= deltaY * rotationAmount;
 
         this._setCameraPos();
     }
@@ -77,25 +92,23 @@ export class Arcball extends Behavior {
         this._cameraNode.components.camera._matricesDirty = true;
     }
 
+    private _setCurrentPos(event: PointerEvent) {
+        const clientRect = this._scene.canvas.getBoundingClientRect();
+        vec2.set(this._currentPos, event.clientX - clientRect.left, event.clientY - clientRect.top);
+    }
+
     private _onPointerDown(event: PointerEvent) {
         this._dragging = true;
+        this._setCurrentPos(event);
+        vec2.copy(this._previousPos, this._currentPos);
     }
 
     private _onPointerMove(event: PointerEvent) {
         if (!this._dragging) return;
-
-        let deltaX = 0.0;
-        if (event.movementX > 0) deltaX = -1.0;
-        else if (event.movementX < 0) deltaX = 1.0;
-
-        let deltaY = 0.0;
-        if (event.movementY > 0) deltaY = -1.0;
-        else if (event.movementY < 0) deltaY = 1.0;
-
-        this._orbit(deltaX, deltaY);
+        this._setCurrentPos(event);
     }
 
-    private _onPointerUp(event: PointerEvent) {
+    private _onPointerUp(_event: PointerEvent) {
         this._dragging = false;
     }
 

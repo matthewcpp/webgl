@@ -1,18 +1,13 @@
-import {Shader} from "./Shader";
+import {Shader, ShaderProgram} from "./Shader";
 
-export class Material {
-    public readonly shader: Shader;
-    public params: Object;
-    public constructor(shader: Shader, params?: Object){
+export abstract class Material {
+    public shader: Shader;
+    public program: ShaderProgram;
+
+    protected constructor(shader: Shader) {
         this.shader = shader;
-
-        if (params)
-            this.params = shader.shaderInterface.copyParams(params);
-        else
-            this.params = shader.shaderInterface.createParams();
+        this.program = null;
     }
 
-    public clone(): Material {
-        return new Material(this.shader, this.params);
-    }
+    public abstract featureMask(): number;
 }

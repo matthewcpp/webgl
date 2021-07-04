@@ -1,17 +1,12 @@
-import {Behavior} from "./Behavior.js";
 import {Node} from "../Node";
-import {Scene} from "../Scene";
 
 import {vec3, quat} from "gl-matrix";
 
-export class Headlight extends Behavior {
-    private _cameraNode: Node;
-    private _lightNode: Node;
+export class Headlight{
 
-    public constructor(lightNode: Node, cameraNode: Node, scene: Scene) {
-        super(scene);
-        this._lightNode = lightNode;
-        this._cameraNode = cameraNode;
+    public constructor(
+        private _lightNode: Node,
+        private _cameraNode: Node) {
     }
 
     public update(): void {
