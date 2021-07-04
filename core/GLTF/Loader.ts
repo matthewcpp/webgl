@@ -1,15 +1,13 @@
 import {Scene} from "../Scene";
 import * as GLTF from "./Schema";
 import {Node} from "../Node";
-import {Attribute, ElementBuffer, Mesh, Primitive} from "../Mesh";
-import {Material} from "../Material.js";
-import {DefaultAttributeLocations} from "../Shader";
+import {Attribute, AttributeType, ElementBuffer, Mesh, Primitive} from "../Mesh";
 import {Bounds} from "../Bounds";
-import {PhongParams, PhongTexturedParams} from "../shader/Phong";
 import {BinaryGltf} from "@matthewcpp/binary-gltf";
 
 import {vec3, vec4, quat, mat4} from "gl-matrix"
 import {Texture} from "../Texture";
+import {PhongMaterial} from "../shader/Phong";
 
 export class Loader {
     private _baseUrl: string;
@@ -20,19 +18,19 @@ export class Loader {
     private _bufferViews: DataView[] = null;
     private _glBuffers: WebGLBuffer[] = null;
     private _textures: Texture[] = null;
-    private _materials: Material[] = null;
+    private _materials: PhongMaterial[] = null;
 
     public autoscaleScene = true;
 
-    static readonly attributeLocations = new Map<string, number>();
+    static readonly _attributeNameToType = new Map<string, AttributeType>();
 
     public constructor(
         private _scene: Scene)
     {
-        if (Loader.attributeLocations.size === 0) {
-            Loader.attributeLocations.set("POSITION", DefaultAttributeLocations.Position);
-            Loader.attributeLocations.set("NORMAL", DefaultAttributeLocations.Normal);
-            Loader.attributeLocations.set("TEXCOORD_0", DefaultAttributeLocations.TexCoord0);
+        if (Loader._attributeNameToType.size === 0) {
+            Loader._attributeNameToType.set("POSITION", AttributeType.Position);
+            Loader._attributeNameToType.set("NORMAL", AttributeType.Normal);
+            Loader._attributeNameToType.set("TEXCOORD_0", AttributeType.TexCoord0);
         }
     }
 
@@ -54,7 +52,7 @@ export class Loader {
         this._bufferViews = this._gltf.bufferViews ? new Array<DataView>(this._gltf.bufferViews.length) : null;
         this._glBuffers = this._gltf.bufferViews ? new Array<WebGLBuffer>(this._gltf.bufferViews.length) : null;
         this._textures = this._gltf.images ? new Array<Texture>(this._gltf.images.length) : null;
-        this._materials = this._gltf.materials ? new Array<Material>(this._gltf.materials.length) : null;
+        this._materials = this._gltf.materials ? new Array<PhongMaterial>(this._gltf.materials.length) : null;
 
         if (this._gltf.scenes && this._gltf.scenes.length > 0)
             return await this._loadScene(this._gltf.scenes[0]);
@@ -169,7 +167,10 @@ export class Loader {
 
                 const indicesBuffer = await this._getElementBuffer(meshPrimitive.indices);
 
-                primitives.push(new Primitive(type, indicesBuffer, attributes, bounds, baseMaterial));
+                const primitive = new Primitive(type, indicesBuffer, attributes, bounds, baseMaterial);
+                primitives.push(primitive);
+
+                this._scene.shaders.updateProgram(baseMaterial, primitive);
             }
 
             this._meshes[index] = this._scene.meshes.create(primitives);
@@ -187,14 +188,6 @@ export class Loader {
 
             default:
                 throw new Error(`Unsupported Primitive Mode: ${mode}`);
-        }
-    }
-
-    private static _getAttributeIndex(gltfName: string){
-        if (Loader.attributeLocations.has(gltfName))
-            return Loader.attributeLocations.get(gltfName);
-        else{
-            return -1;
         }
     }
 
@@ -239,14 +232,13 @@ export class Loader {
     private async _getAttribute(gltfName: string, index: number) {
         const accessor = this._gltf.accessors[index];
         const bufferView = this._gltf.bufferViews[accessor.bufferView];
-        const attributeIndex = Loader._getAttributeIndex(gltfName);
 
-        if (attributeIndex == -1) {
+        const attributeType = Loader._attributeNameToType.get(gltfName);
+        if (attributeType === undefined)
             return null;
-        }
 
         return new Attribute(
-            attributeIndex,
+            attributeType,
             Loader._getComponentType(accessor.componentType, this._scene.gl),
             Loader._getComponentElementCount(accessor.type),
             accessor.count,
@@ -324,32 +316,26 @@ export class Loader {
 
     private async _getMaterial(primitive: GLTF.Primitive) {
         if (primitive.hasOwnProperty("material")) {
-
             if (!this._materials[primitive.material]) {
                 const gltfMaterial = this._gltf.materials[primitive.material];
-                let faceMaterial:Material = null;
+                let faceMaterial: PhongMaterial = new PhongMaterial(this._scene.shaders.defaultPhong);
 
                 if (gltfMaterial.pbrMetallicRoughness.baseColorTexture) {
-                    faceMaterial = new Material(await this._scene.defaultShaders.phongTextured());
-                    const params = faceMaterial.params as PhongTexturedParams;
-                    params.diffuseTexture = await this._getTexture(gltfMaterial.pbrMetallicRoughness.baseColorTexture.index);
-                }
-                else {
-                    faceMaterial = new Material(await this._scene.defaultShaders.phong());
+                    faceMaterial.diffuseMap = await this._getTexture(gltfMaterial.pbrMetallicRoughness.baseColorTexture.index);
                 }
 
-                const params = faceMaterial.params as PhongParams;
                 if (gltfMaterial.pbrMetallicRoughness.baseColorFactor) {
-                    vec4.copy(params.diffuseColor, gltfMaterial.pbrMetallicRoughness.baseColorFactor as unknown as vec4);
+                    const color = gltfMaterial.pbrMetallicRoughness.baseColorFactor;
+                    vec4.set(faceMaterial.diffuseColor, color[0], color[1], color[2], color[3]);
                 }
 
                 this._materials[primitive.material] = faceMaterial;
             }
 
-            return this._materials[primitive.material].clone();
+            return this._materials[primitive.material]
         }
         else {
-            return this._scene.defaultMaterial.clone();
+            return new PhongMaterial(this._scene.shaders.defaultPhong);
         }
     }
 

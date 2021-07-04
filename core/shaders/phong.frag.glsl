@@ -1,16 +1,19 @@
-#version 300 es
-
-precision mediump float;
-precision mediump int;
-
-#include "wgl.h.glsl"
-
-#ifdef WGL_TEXTURE_COORDS
+#ifdef WGL_TEXTURE_COORDS0
 in vec2 wgl_tex_coords0;
+#endif
+
+#ifdef WGL_PHONG_DIFFUSE_MAP
 uniform sampler2D diffuse_sampler;
+#endif
+
+#ifdef WGL_PHONG_SPECULAR_MAP
 uniform sampler2D specular_sampler;
+#endif
+
+#ifdef WGL_PHONG_EMISSION_MAP
 uniform sampler2D emission_sampler;
 #endif
+
 
 out vec4 finalColor;
 
@@ -29,7 +32,7 @@ vec4 calculateSpecular(wglLight light, vec3 light_dir) {
     float spec = pow(max(dot(view_dir, reflect_dir), 0.0f), shininess);
     vec4 specular_color = vec4(specular_strength * spec * light.color , 1.0f);
 
-    #ifdef WGL_TEXTURE_COORDS
+    #if defined(WGL_TEXTURE_COORDS0) && defined(WGL_PHONG_SPECULAR_MAP)
     specular_color *= texture(specular_sampler, wgl_tex_coords0);
     #endif
 
@@ -82,7 +85,7 @@ vec4 spotLight(wglLight light, vec4 object_diffuse_color) {
 
 void main() {
     vec4 object_diffuse_color = diffuse_color;
-    #ifdef WGL_TEXTURE_COORDS
+    #if defined(WGL_TEXTURE_COORDS0) && defined(WGL_PHONG_DIFFUSE_MAP)
     object_diffuse_color *= texture(diffuse_sampler, wgl_tex_coords0);
     #endif
 
@@ -107,13 +110,10 @@ void main() {
     }
 
     // calculate emission
-    #ifdef WGL_TEXTURE_COORDS
+    #if defined(WGL_TEXTURE_COORDS0) && defined(WGL_PHONG_EMISSION_MAP)
     vec4 emission = texture(emission_sampler, wgl_tex_coords0);
-    #else
-    vec4 emission = vec4(0.0f);
-    #endif
-
     frag_color += emission;
+    #endif
 
     finalColor = frag_color;
 }

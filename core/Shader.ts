@@ -1,71 +1,118 @@
-export interface ShaderInterface {
-    // called after the shader has been successfully compiled
-    init(program: WebGLProgram, gl: WebGL2RenderingContext): void;
+import {Material} from "./Material";
+import {ShaderLibrary} from "./shader/ShaderLibrary";
+import {AttributeType, Primitive} from "./Mesh";
 
-    // called by renderer to know what attributes should be bound for this program
-    attributes() : Array<number>;
-
-    // called when an object will be drawn with this shader
-    push(program: WebGLProgram, gl: WebGL2RenderingContext, params: Object);
-
-    // create a fresh copy of shader parameters with default values
-    createParams(): Object;
-
-    // deep copy an existing set of shader parameters
-    copyParams(src: Object): Object;
-}
-
-export enum DefaultAttributeLocations {
-    Position = 0,
-    Normal = 1,
-    TexCoord0 = 2
-}
-
-export class ShaderData {
-    public preprocessorDefines = new Array<string>();
-    public vertexSource: string;
-    public fragmentSource: string;
-    public shaderInterface: ShaderInterface;
-}
-
-export class Shader {
+export class ShaderProgram {
     public constructor(
-        public readonly program: WebGLProgram,
-        public readonly globalBlockIndex: number,
-        public readonly objectBlockIndex: number,
-        public readonly shaderInterface: ShaderInterface,
+    /** The unique hash for this program.
+     * This distinguishes it from other compiled versions of the same shader source code.
+     * The hash is a combination of primitive (16 bits) attributes and shader features (16 bits).
+     */
+    public readonly programHash: number,
+
+    /** Handle to compiled shader object. */
+    public readonly program: WebGLProgram,
+
+    /** The index of global uniform block.  This uniform block represents common data such as camera and lighting info that is passed to all shaders from the webgl engine */
+    public readonly globalBlockIndex: number,
+
+    /** Index of the object block.  This is object specific data such as transform  and normal matrix passed to the shader by the webgl engine. */
+    public readonly objectBlockIndex: number
     ){}
+}
 
-    public static create(name: string, shaderData: ShaderData, gl: WebGL2RenderingContext) {
-        const program = Shader._compileShader(name, shaderData.vertexSource, shaderData.fragmentSource, shaderData.preprocessorDefines, gl);
+export interface Shader {
+    readonly name: string;
+    readonly vertexSource: string;
+    readonly fragmentSource: string;
 
-        const wglGlobalDataIndex = gl.getUniformBlockIndex(program, 'wglData');
-        const wglObjectDataLocation = gl.getUniformBlockIndex(program, 'wglModelData');
+    preprocessorStatements(material: Material): string[];
+    programCompiled(gl: WebGL2RenderingContext, material: Material, programHash: number, program: WebGLProgram, globalBlockIndex: number, objectBlockIndex: number): ShaderProgram;
+    setUniforms(gl: WebGL2RenderingContext, material: Material);
+}
 
-        if (wglGlobalDataIndex == -1)
-            throw new Error(`Unable to find wglData uniform block`);
-        if (wglObjectDataLocation == -1)
-            throw new Error(`Unable to find wglModelData uniform block`);
 
-        shaderData.shaderInterface.init(program, gl);
+export class Shaders {
+    private _shaderPrograms = new Map<Shader, ShaderProgram[]>();
 
-        return new Shader(program, wglGlobalDataIndex, wglObjectDataLocation, shaderData.shaderInterface);
+    public constructor(
+        private _gl: WebGL2RenderingContext,
+        public readonly defaultPhong: Shader,
+        public readonly defaultUnlit: Shader
+    ){ }
+
+    public updateProgram(material: Material, primitive: Primitive) {
+        material.program = null;
+
+        if (material.shader === null)
+            return;
+
+        let shaderPrograms = this._shaderPrograms.get(material.shader);
+
+        if (!shaderPrograms) {
+            shaderPrograms = [];
+            this._shaderPrograms.set(material.shader, shaderPrograms);
+        }
+
+        const programHash = primitive.attributeMask | (material.featureMask() << 16);
+        for (const program of shaderPrograms) {
+            if (program.programHash === programHash) {
+                material.program = program;
+                return;
+            }
+        }
+
+        if (material.program === null) {
+            this._compileShader(primitive, material, programHash);
+        }
     }
 
-    private static _shaderDefineStr = "//!WGL_DEFINES";
-    private static _compileShader(name: string, vertexSource: string, fragmentSource: string, preprocessorDefines: string[], gl: WebGL2RenderingContext) {
-        if (preprocessorDefines.length > 0) {
-            const preprocessorDefinitions = preprocessorDefines.join("\n");
-            vertexSource = vertexSource.replace(Shader._shaderDefineStr, preprocessorDefinitions);
-            fragmentSource = fragmentSource.replace(Shader._shaderDefineStr, preprocessorDefinitions);
+    public clear() {
+        this._shaderPrograms.forEach((programs: ShaderProgram[]) => {
+            for (const program of programs) {
+                this._gl.deleteProgram(program.program);
+            }
+        })
+
+        this._shaderPrograms.clear();
+    }
+
+    private _compileShader(primitive: Primitive, material: Material, programHash: number) {
+        try {
+            const attributePreprocessorStatements = Shaders.attributePreprocessorStatements(primitive);
+            const shaderPreprocessorStatements = material.shader.preprocessorStatements(material);
+            const preprocessorCode = attributePreprocessorStatements.concat(shaderPreprocessorStatements).join('\n') + "\n";
+
+            const vertexSource = ShaderLibrary.commonHeader + ShaderLibrary.commonVertex + preprocessorCode + material.shader.vertexSource;
+            const fragmentSource = ShaderLibrary.commonHeader + preprocessorCode + material.shader.fragmentSource;
+
+            const webglProgram = this._webglCompile(vertexSource, fragmentSource);
+
+            const wglGlobalDataIndex = this._gl.getUniformBlockIndex(webglProgram, 'wglData');
+            const wglObjectDataLocation = this._gl.getUniformBlockIndex(webglProgram, 'wglObjectData');
+
+            console.assert(wglGlobalDataIndex !== -1 && wglObjectDataLocation !== -1);
+
+            const shaderProgram = material.shader.programCompiled(this._gl, material, programHash, webglProgram, wglGlobalDataIndex, wglObjectDataLocation);
+            material.program = shaderProgram;
+
+            let shaderPrograms = this._shaderPrograms.get(material.shader);
+            shaderPrograms.push(shaderProgram);
         }
+        catch(e) {
+            throw new Error(`${material.shader.name}: ${e.toString()}`)
+        }
+    }
+
+    private _webglCompile(vertexSource: string, fragmentSource: string): WebGLProgram {
+        const gl = this._gl;
 
         const vertexShader = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vertexShader, vertexSource);
         gl.compileShader(vertexShader);
 
         if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
-            const errorMessage = `Error compiling ${name} vertex shader: ${gl.getShaderInfoLog(vertexShader)}`;
+            const errorMessage = `Error compiling vertex shader: ${gl.getShaderInfoLog(vertexShader)}`;
             gl.deleteShader(vertexShader);
 
             throw new Error(errorMessage);
@@ -76,7 +123,7 @@ export class Shader {
         gl.compileShader(fragmentShader);
 
         if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
-            const errorMessage = `Error compiling ${name} fragment shader: ${gl.getShaderInfoLog(fragmentShader)}`;
+            const errorMessage = `Error compiling fragment shader: ${gl.getShaderInfoLog(fragmentShader)}`;
             gl.deleteShader(vertexShader);
             gl.deleteShader(fragmentShader);
 
@@ -89,7 +136,7 @@ export class Shader {
         gl.linkProgram(shaderProgram);
 
         if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-            const errorMessage = `Error linking ${name}: ${gl.getProgramInfoLog(shaderProgram)}`;
+            const errorMessage = `Error linking shader program: ${gl.getProgramInfoLog(shaderProgram)}`;
             gl.deleteProgram(shaderProgram);
             gl.deleteShader(vertexShader);
             gl.deleteShader(fragmentShader);
@@ -98,6 +145,28 @@ export class Shader {
         }
 
         return shaderProgram;
+    }
+
+    private static attributePreprocessorStatements(primitive: Primitive): string[] {
+        const preprocessorStatements: string[] = [];
+
+        for (const attribute of primitive.attributes) {
+            switch (attribute.type) {
+                case AttributeType.Position:
+                    preprocessorStatements.push("#define WGL_POSITIONS");
+                    break;
+
+                case AttributeType.Normal:
+                    preprocessorStatements.push("#define WGL_NORMALS");
+                    break;
+
+                case AttributeType.TexCoord0:
+                    preprocessorStatements.push("#define WGL_TEXTURE_COORDS0");
+                    break;
+            }
+        }
+
+        return preprocessorStatements;
     }
 }
 

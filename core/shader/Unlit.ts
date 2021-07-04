@@ -1,92 +1,82 @@
-import {DefaultAttributeLocations, ShaderInterface} from "../Shader";
+import {Shader, ShaderProgram} from "../Shader.js";
+import {Material} from "../Material";
+import {Texture} from "../Texture";
+import {ShaderLibrary} from "./ShaderLibrary";
 
 import {vec4} from "gl-matrix"
+import {PhongMaterial, PhongShaderProgram} from "./Phong";
 
-export interface UnlitParams {
-    color: vec4;
+enum UnlitShaderFeatures {
+    DiffuseMap = 1
 }
 
-export class UnlitShader implements ShaderInterface{
-    private static _vertexAttributes = [DefaultAttributeLocations.Position];
+export class UnlitMaterial extends Material {
+    public diffuseColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+    public diffuseMap: Texture = null;
 
-    private _fragColor: WebGLUniformLocation;
+    public constructor(shader: Shader) {
+        super(shader);
+    }
 
+    public featureMask(): number {
+        let mask = 0;
 
-    public init(program: WebGLProgram, gl: WebGL2RenderingContext) {
-        this._fragColor = gl.getUniformLocation(program, "frag_color");
+        if (this.diffuseMap)
+            mask |= UnlitShaderFeatures.DiffuseMap;
 
-        if (this._fragColor == null) {
-            throw new Error("Unable to get uniform location for frag_color in unlit shader.");
+        return mask;
+    }
+
+    public copy(): UnlitMaterial {
+        const material = new UnlitMaterial(this.shader);
+
+        vec4.copy(material.diffuseColor, this.diffuseColor);
+        material.diffuseMap = this.diffuseMap;
+
+        return material;
+    }
+}
+
+export class UnlitShaderProgram extends ShaderProgram {
+    diffuseColorLocation: WebGLUniformLocation;
+    diffuseSamplerLocation: WebGLUniformLocation;
+}
+
+export class UnlitShader implements Shader {
+    public readonly name = "Unlit";
+    public readonly vertexSource = ShaderLibrary.unlitVertex;
+    public readonly fragmentSource = ShaderLibrary.unlitFragment;
+
+    public preprocessorStatements(material: Material): string[] {
+        const unlitMaterial = material as UnlitMaterial;
+        const statements: string[] = [];
+
+        if (unlitMaterial.diffuseMap)
+            statements.push("#define WGL_UNLIT_DIFFUSE_MAP");
+
+        return statements;
+    }
+
+    public programCompiled(gl: WebGL2RenderingContext, material: Material, programHash: number, program: WebGLProgram, globalBlockIndex: number, objectBlockIndex: number): ShaderProgram {
+        const unlitShaderProgram = new UnlitShaderProgram(programHash, program, globalBlockIndex, objectBlockIndex);
+
+        unlitShaderProgram.diffuseColorLocation = gl.getUniformLocation(program, "diffuse_color");
+        unlitShaderProgram.diffuseSamplerLocation = gl.getUniformLocation(program, "diffuse_sampler");
+
+        return unlitShaderProgram;
+    }
+
+    setUniforms(gl: WebGL2RenderingContext, material: Material) {
+        const unlitMaterial = material as UnlitMaterial;
+        const unlitProgram = material.program as UnlitShaderProgram;
+
+        gl.uniform4fv(unlitProgram.diffuseColorLocation, unlitMaterial.diffuseColor);
+
+        let textureIndex = 0;
+        if (unlitMaterial.diffuseMap) {
+            gl.activeTexture(gl.TEXTURE0 + textureIndex++);
+            gl.bindTexture(gl.TEXTURE_2D, unlitMaterial.diffuseMap.handle);
+            gl.uniform1i(unlitProgram.diffuseSamplerLocation, 0);
         }
-    }
-
-    public attributes() : Array<number> {
-        return UnlitShader._vertexAttributes;
-    }
-
-    public push(program: WebGLProgram, gl: WebGL2RenderingContext, params: Object): void {
-        const unlitParams = params as UnlitParams;
-        gl.uniform4fv(this._fragColor, unlitParams.color);
-    }
-
-    createParams(): Object {
-        return {
-            color: vec4.fromValues(1.0, 1.0, 1.0, 1.0)
-        };
-    }
-
-    copyParams(src: Object): Object {
-        const unlitParams = src as UnlitParams;
-        return {
-            color: vec4.fromValues(unlitParams.color[0], unlitParams.color[1], unlitParams.color[2], unlitParams.color[3])
-        };
-    }
-}
-
-export interface UnlitTexturedParams {
-    color: vec4;
-    texture: WebGLTexture;
-}
-
-export class UnlitTexturedShader implements ShaderInterface{
-    private _fragColor: WebGLUniformLocation;
-    private _sampler0: WebGLUniformLocation;
-    private static _vertexAttributes = [0, 2];
-
-    public init(program: WebGLProgram, gl: WebGL2RenderingContext) {
-        this._fragColor = gl.getUniformLocation(program, "frag_color");
-        this._sampler0 = gl.getUniformLocation(program, "sampler0");
-
-        if (this._fragColor == null || this._sampler0 == null) {
-            throw new Error("Unable to get uniform location for frag_color in unlit shader.")
-        }
-    }
-
-    public attributes() : Array<number> {
-        return UnlitTexturedShader._vertexAttributes;
-    }
-
-    public push(program: WebGLProgram, gl: WebGL2RenderingContext, params: any) {
-        const unlitParams = params as UnlitTexturedParams;
-        gl.uniform4fv(this._fragColor, unlitParams.color);
-
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, unlitParams.texture);
-        gl.uniform1i(this._sampler0, 0);
-    }
-
-    createParams(): Object {
-        return {
-            color: vec4.fromValues(1.0, 1.0, 1.0, 1.0),
-            texture: WebGLTexture = null
-        };
-    }
-
-    copyParams(src: Object): Object {
-        const params = src as UnlitTexturedParams;
-        return {
-            color: vec4.fromValues(params.color[0], params.color[1], params.color[2], params.color[3]),
-            texture: params.texture
-        };
     }
 }

@@ -1,6 +1,7 @@
-// Standard Shader Header
+#version 300 es
 
-//!WGL_DEFINES
+precision mediump float;
+precision mediump int;
 
 const int WGL_LIGHT_DIRECTIONAL = 0;
 const int WGL_LIGHT_POINT = 1;
@@ -32,9 +33,7 @@ layout(std140) uniform wglData {
     wglLight lights[WGL_MAX_LIGHTS];
 } wgl;
 
-layout(std140) uniform wglModelData {
+layout(std140) uniform wglObjectData {
     mat4 matrix;
     mat4 normal_matrix;
-} wgl_model;
-
-// ---------------------
+} wgl_object;

@@ -10,7 +10,7 @@ import {Mesh, Attribute, ElementBuffer, Primitive} from "./Mesh";
 import {MeshInstance} from "./MeshInstance";
 import {Node} from "./Node"
 import {Scene} from "./Scene";
-import {Shader, ShaderData} from "./Shader"
+import {Shader, ShaderProgram} from "./Shader"
 import {Texture} from "./Texture";
 
 export {
@@ -24,6 +24,6 @@ export {
     Mesh, MeshInstance, Attribute, ElementBuffer, Primitive,
     Node,
     Scene,
-    Shader, ShaderData,
+    Shader, ShaderProgram,
     Texture
 }

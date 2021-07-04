@@ -4,30 +4,29 @@ import {Renderer} from "./Renderer";
 import {Textures} from "./Texture"
 import {Node} from "./Node";
 import {Camera} from "./Camera";
-import {Shader, ShaderData} from "./Shader";
-import {DefaultShaders} from "./shader/DefaultShaders";
-import {Material} from "./Material";
-import {Light, LightType} from "./Light";
+import {Shaders} from "./Shader";
+import {Light, LightType, Lights} from "./Light";
 import {Bounds} from "./Bounds";
 
-import {vec3} from "gl-matrix";
+import {quat, vec3} from "gl-matrix";
+import {PhongShader} from "./shader/Phong";
+import {UnlitShader} from "./shader/Unlit";
+import {Arcball} from "./behaviors/Arcball";
 
 export class Scene {
     public readonly canvas: HTMLCanvasElement;
     public readonly gl: WebGL2RenderingContext;
     private readonly _renderer: Renderer;
 
-    public shaders = new Map<string, Shader>();
-    public meshes: Meshes;
-    public meshInstances: MeshInstances;
-    public textures: Textures;
-    public mainCamera: Camera = null;
+    public readonly meshes: Meshes;
+    public readonly meshInstances: MeshInstances;
+    public readonly textures: Textures;
+    public readonly shaders: Shaders;
+    public readonly lights: Lights;
 
     public readonly worldBounding = Bounds.createFromMinMax(vec3.fromValues(-1.0, -1.0, -1.0), vec3.fromValues(1.0, 1.0, 1.0));
-    public readonly defaultShaders = new DefaultShaders(this);
-    public readonly rootNode = new Node("root");
-
-    public defaultMaterial: Material;
+    public rootNode: Node = null;
+    public mainCamera: Camera = null;
 
     public constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -39,9 +38,11 @@ export class Scene {
             throw new Error("Unable to initialize WebGL 2.0");
         }
 
-        this._renderer = new Renderer(this.gl);
+        this.lights = new Lights();
+        this._renderer = new Renderer(this.gl, this.lights);
         this.textures = new Textures(this.gl);
         this.meshes = new Meshes(this.gl);
+        this.shaders = new Shaders(this.gl, new PhongShader(), new UnlitShader());
         this.meshInstances = new MeshInstances(this._renderer);
     }
 
@@ -51,17 +52,18 @@ export class Scene {
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
 
-        this._createDefaultCamera();
-        this.textures.createDefault();
-        this.defaultMaterial = new Material(await this.defaultShaders.unlit());
+        this.createDefault();
     }
 
     public clear() {
         Node.cleanupNode(this.rootNode);
 
+        this.mainCamera = null;
         this.meshes.clear();
         this.textures.clear();
         this._renderer.clear();
+        this.shaders.clear();
+        this.lights.clear();
     }
 
     public draw() {
@@ -81,31 +83,6 @@ export class Scene {
         this.canvas.height = this.canvas.clientHeight;
     }
 
-    public createShader(name: string, shaderData: ShaderData): Shader {
-        if (this.shaders.has(name)) {
-            throw new Error(`Shader with name: ${name} already exists.`);
-        }
-
-        const shader = Shader.create(name, shaderData, this.gl);
-        this.shaders.set(name, shader);
-
-        return shader;
-    }
-
-    public createLight(lightType: LightType, node: Node): Light {
-        return this._renderer.createLight(lightType, node);
-    }
-
-    private _createDefaultCamera() {
-        const cameraNode = new Node("Main Camera");
-        vec3.set(cameraNode.position, 0.0, 7.0, 10.0);
-        cameraNode.updateMatrix();
-        cameraNode.lookAt(vec3.fromValues(0.0, 1.0, 0.0), cameraNode.up());
-        cameraNode.components.camera = new Camera(cameraNode);
-        this.mainCamera = cameraNode.components.camera;
-        this.rootNode.addChild(cameraNode);
-    }
-
     public calculateWorldBounding() {
         this.worldBounding.invalidate();
         Scene._getBoundsRec(this.rootNode, this.worldBounding);
@@ -121,5 +98,26 @@ export class Scene {
         for (let i = 0; i < childCount; i++) {
             Scene._getBoundsRec(node.getChild(i), bounds);
         }
+    }
+
+    public createDefault() {
+        this.rootNode = new Node("root");
+        const cameraNode = new Node("Main Camera");
+
+        vec3.set(cameraNode.position, 0.0, 7.0, 10.0);
+        cameraNode.updateMatrix();
+        cameraNode.lookAt(vec3.fromValues(0.0, 1.0, 0.0), cameraNode.up());
+        cameraNode.components.camera = new Camera(cameraNode);
+        this.mainCamera = cameraNode.components.camera;
+        this.mainCamera.near = 0.01;
+        this.mainCamera.far = 1000
+        this.rootNode.addChild(cameraNode);
+
+        const directionalLightNode = new Node();
+        directionalLightNode.components.light = this.lights.create(directionalLightNode, LightType.Directional);
+        directionalLightNode.position = vec3.fromValues(0.0, 3, 0.0);
+        quat.fromEuler(directionalLightNode.rotation, 50.0, -30.0, 0.0);
+        directionalLightNode.updateMatrix();
+        this.rootNode.addChild(directionalLightNode);
     }
 }

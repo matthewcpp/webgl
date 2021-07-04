@@ -20,11 +20,6 @@ export class Textures {
         private _gl: WebGL2RenderingContext
     ) {}
 
-    public createDefault() {
-        Textures.defaultWhite = this.createFromRGBAData(1, 1, new Uint8Array([255, 255, 255, 255]));
-        Textures.defaultBlack = this.createFromRGBAData(1, 1, new Uint8Array([0, 0, 0, 255]));
-    }
-
     public createFromImage(image: HTMLImageElement): Texture {
         const gl = this._gl;
 

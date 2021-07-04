@@ -1,17 +1,17 @@
 import {Camera} from "./Camera";
 import {Node} from "./Node";
-import {Shader} from "./Shader";
+import {ShaderProgram} from "./Shader";
 import {Mesh, Primitive} from "./Mesh";
 import {MeshInstance} from "./MeshInstance";
 import {ObjectUniformBuffer, UniformBuffer} from "./shader/UniformBuffer";
-import {Light, LightType} from "./Light";
+import {Lights} from "./Light";
 
 import {mat4, vec4} from "gl-matrix"
 import {Material} from "./Material";
 
 class DrawCall {
     public constructor(
-        public params: any,
+        public material: Material,
         public primitive: Primitive,
         public matrix: mat4,
     ) {}
@@ -25,13 +25,14 @@ export class Renderer {
     private readonly _uniformBuffer: UniformBuffer;
     private readonly _objectUniformBuffer: ObjectUniformBuffer;
 
-    private readonly _drawCalls = new Map<Shader, DrawCall[]>();
+    private readonly _drawCalls = new Map<ShaderProgram, DrawCall[]>();
 
-    private lights: Light[] = [];
+    private _lights: Lights;
     private _meshInstances: MeshInstance[] = [];
 
-    constructor(gl: WebGL2RenderingContext) {
+    constructor(gl: WebGL2RenderingContext, lights: Lights) {
         this.gl = gl;
+        this._lights = lights;
 
         this._uniformBuffer = new UniformBuffer(this.gl);
         this._uniformBuffer.ambientColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
@@ -53,45 +54,37 @@ export class Renderer {
         this._drawCalls.clear();
 
         for (const meshInstance of this._meshInstances) {
-            for (let i  = 0; i < meshInstance.materials.length; i++) {
+            for (let i  = 0; i < meshInstance.mesh.primitives.length; i++) {
                 // Temporary
                 if (meshInstance.mesh.primitives[i].type != this.gl.TRIANGLES)
                     return;
 
-                const material = meshInstance.materials[i];
-                const drawCall = new DrawCall(material.params, meshInstance.mesh.primitives[i], meshInstance.node.worldMatrix);
+                const material = meshInstance.getReadonlyMaterial(i);
+                const drawCall = new DrawCall(material, meshInstance.mesh.primitives[i], meshInstance.node.worldMatrix);
 
-                if (this._drawCalls.has(material.shader))
-                    this._drawCalls.get(material.shader).push(drawCall);
+                if (this._drawCalls.has(material.program))
+                    this._drawCalls.get(material.program).push(drawCall);
                 else
-                    this._drawCalls.set(material.shader, [drawCall]);
+                    this._drawCalls.set(material.program, [drawCall]);
             }
         }
     }
 
-    public createMeshInstance(node: Node, mesh: Mesh, materials?: Array<Material>): MeshInstance {
-        this._meshInstances.push(new MeshInstance(node, mesh, materials));
+    public createMeshInstance(node: Node, mesh: Mesh): MeshInstance {
+        this._meshInstances.push(new MeshInstance(node, mesh));
         return this._meshInstances[this._meshInstances.length - 1];
     }
 
     public clear() {
         this._meshInstances = [];
-    }
-
-    public createLight(lightType: LightType, node: Node) {
-        if (this.lights.length === UniformBuffer.maxLightCount)
-            throw new Error("Maximum number of lights have already been created.");
-
-        const light = new Light(lightType, node);
-        this.lights.push(light);
-        return light;
+        this._camera = null;
     }
 
     private updateLights() {
-        this._uniformBuffer.lightCount = this.lights.length;
+        this._uniformBuffer.lightCount = this._lights.items.length;
 
-        for (let i = 0; i < this.lights.length; i++)
-            this._uniformBuffer.setLight(i, this.lights[i]);
+        for (let i = 0; i < this._lights.items.length; i++)
+            this._uniformBuffer.setLight(i, this._lights.items[i]);
     }
 
     public drawScene(node: Node) {
@@ -101,20 +94,19 @@ export class Renderer {
         // set the standard shader data in the local buffer
         this._uniformBuffer.updateGpuBuffer();
 
-        this._drawCalls.forEach((drawables: Array<DrawCall>, shader: Shader) => {
-            this._drawList(shader, drawables);
+        this._drawCalls.forEach((drawables: Array<DrawCall>, program: ShaderProgram) => {
+            this._drawList(program, drawables);
         })
     }
 
-    private _drawList(shader: Shader, drawCalls: Array<DrawCall>) {
-        this.gl.useProgram(shader.program);
-
-        const shaderAttributes = shader.shaderInterface.attributes();
+    private _drawList(shaderProgram: ShaderProgram, drawCalls: Array<DrawCall>) {
+        this.gl.useProgram(shaderProgram.program);
 
         // send the default data to the newly active shader
-        this.gl.uniformBlockBinding(shader.program, shader.globalBlockIndex, UniformBuffer.defaultBindIndex);
-        this.gl.uniformBlockBinding(shader.program, shader.objectBlockIndex, ObjectUniformBuffer.defaultBindIndex);
+        this.gl.uniformBlockBinding(shaderProgram.program, shaderProgram.globalBlockIndex, UniformBuffer.defaultBindIndex);
+        this.gl.uniformBlockBinding(shaderProgram.program, shaderProgram.objectBlockIndex, ObjectUniformBuffer.defaultBindIndex);
 
+        // todo: dont create me over and over
         const normalMatrix = mat4.create();
 
         for (const drawCall of drawCalls) {
@@ -125,25 +117,19 @@ export class Renderer {
             this._objectUniformBuffer.normalMatrix.set(normalMatrix, 0);
             this._objectUniformBuffer.updateGpuBuffer();
 
-            shader.shaderInterface.push(shader.program, this.gl, drawCall.params);
+            drawCall.material.shader.setUniforms(this.gl, drawCall.material);
 
             for (const attribute of drawCall.primitive.attributes) {
-                if (shaderAttributes.indexOf(attribute.index) < 0)
-                    continue;
-
                 this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribute.buffer);
-                this.gl.vertexAttribPointer(attribute.index, attribute.componentCount, attribute.componentType, false, attribute.stride, attribute.offset);
-                this.gl.enableVertexAttribArray(attribute.index);
+                this.gl.vertexAttribPointer(attribute.type, attribute.componentCount, attribute.componentType, false, attribute.stride, attribute.offset);
+                this.gl.enableVertexAttribArray(attribute.type);
             }
 
             this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, drawCall.primitive.indices.buffer);
             this.gl.drawElements(drawCall.primitive.type, drawCall.primitive.indices.count, drawCall.primitive.indices.componentType, drawCall.primitive.indices.offset);
 
             for (const attribute of drawCall.primitive.attributes) {
-                if (shaderAttributes.indexOf(attribute.index) < 0)
-                    continue;
-
-                this.gl.disableVertexAttribArray(attribute.index);
+                this.gl.disableVertexAttribArray(attribute.type);
             }
         }
     }
