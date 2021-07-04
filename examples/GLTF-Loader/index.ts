@@ -1,36 +1,9 @@
-import {glMatrix, quat, vec3} from "gl-matrix";
-import {Arcball, Headlight, Loader, LightType, Node, Scene} from "webgl"
+import {glMatrix} from "gl-matrix";
+import {Arcball, Headlight, Loader, Scene} from "webgl"
 
 let webGl: Scene = null;
 let arcball: Arcball = null;
 let headlight: Headlight = null;
-
-async function initScene() {
-    glMatrix.setMatrixArrayType(Array);
-    const glCanvas = document.querySelector("#gl-canvas") as HTMLCanvasElement;
-    glCanvas.oncontextmenu = () => false;
-
-    webGl = new Scene(glCanvas);
-    await webGl.init();
-
-    window.onresize = () => {
-        webGl.canvasResized();
-    }
-
-    const directionalLight = new Node();
-    directionalLight.components.light = webGl.createLight(LightType.Directional, directionalLight);
-    directionalLight.position = vec3.fromValues(0.0, 3, 0.0);
-    quat.fromEuler(directionalLight.rotation, 50.0, -30.0, 0.0);
-    directionalLight.updateMatrix();
-    webGl.rootNode.addChild(directionalLight);
-
-    arcball = new Arcball(webGl.mainCamera.node, webGl);
-    arcball.setInitial(webGl.worldBounding);
-    webGl.mainCamera.near = 0.01;
-    webGl.mainCamera.far = 1000
-
-    headlight = new Headlight(directionalLight, webGl.mainCamera.node);
-}
 
 const modelDomain = "https://webgl-models.s3-us-west-1.amazonaws.com/";
 
@@ -46,13 +19,30 @@ async function loadModel(modelPath: string) {
     else
         await loader.load(modelUrl);
 
+    arcball = new Arcball(webGl.mainCamera.node, webGl);
+    headlight = new Headlight(webGl.lights.items[0].node, webGl.mainCamera.node);
     arcball.setInitial(webGl.calculateWorldBounding());
+}
+
+async function initScene() {
+    glMatrix.setMatrixArrayType(Array);
+    const glCanvas = document.querySelector("#gl-canvas") as HTMLCanvasElement;
+    glCanvas.oncontextmenu = () => false;
+
+    webGl = new Scene(glCanvas);
+    await webGl.init();
+
+    window.onresize = () => {
+        webGl.canvasResized();
+    }
 }
 
 function initUi() {
     const modelSelector = document.querySelector("#model-select") as HTMLSelectElement;
     modelSelector.onchange = async () => {
         webGl.clear();
+        webGl.createDefault();
+
         await loadModel(modelSelector.value);
     }
 }
