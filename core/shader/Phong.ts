@@ -102,26 +102,23 @@ export class PhongShader implements Shader {
         gl.uniform1f(phongProgram.specularStrengthLocation, phongMaterial.specularStrength);
         gl.uniform1f(phongProgram.shininessLocation, phongMaterial.shininess);
 
-        let textureIndex = 0;
+        let textureUnit = 0;
         if (phongMaterial.diffuseMap) {
-            const tex = gl.TEXTURE0 + textureIndex++;
-            gl.activeTexture(gl.TEXTURE0 + textureIndex++);
+            gl.activeTexture(gl.TEXTURE0 + textureUnit);
             gl.bindTexture(gl.TEXTURE_2D, phongMaterial.diffuseMap.handle);
-            gl.uniform1i(phongProgram.diffuseSamplerLocation, tex);
+            gl.uniform1i(phongProgram.diffuseSamplerLocation, textureUnit++);
         }
 
         if (phongMaterial.specularMap) {
-            const tex = gl.TEXTURE0 + textureIndex++;
-            gl.activeTexture(gl.TEXTURE0 + textureIndex++);
+            gl.activeTexture(gl.TEXTURE0 + textureUnit);
             gl.bindTexture(gl.TEXTURE_2D, phongMaterial.specularMap.handle);
-            gl.uniform1i(phongProgram.specularSamplerLocation, tex);
+            gl.uniform1i(phongProgram.specularSamplerLocation, textureUnit++);
         }
 
         if (phongMaterial.emissionMap) {
-            const tex = gl.TEXTURE0 + textureIndex++;
-            gl.activeTexture(gl.TEXTURE0 + textureIndex++);
+            gl.activeTexture(gl.TEXTURE0 + textureUnit);
             gl.bindTexture(gl.TEXTURE_2D, phongMaterial.emissionMap.handle);
-            gl.uniform1i(phongProgram.emissionSamplerLocation, tex);
+            gl.uniform1i(phongProgram.emissionSamplerLocation, textureUnit++);
         }
     }
 }

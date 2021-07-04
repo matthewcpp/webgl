@@ -72,11 +72,11 @@ export class UnlitShader implements Shader {
 
         gl.uniform4fv(unlitProgram.diffuseColorLocation, unlitMaterial.diffuseColor);
 
-        let textureIndex = 0;
+        let textureUnit = 0;
         if (unlitMaterial.diffuseMap) {
-            gl.activeTexture(gl.TEXTURE0 + textureIndex++);
+            gl.activeTexture(gl.TEXTURE0 + textureUnit);
             gl.bindTexture(gl.TEXTURE_2D, unlitMaterial.diffuseMap.handle);
-            gl.uniform1i(unlitProgram.diffuseSamplerLocation, 0);
+            gl.uniform1i(unlitProgram.diffuseSamplerLocation, textureUnit++);
         }
     }
 }
