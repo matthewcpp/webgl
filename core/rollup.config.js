@@ -10,7 +10,7 @@ const path = require("path");
 
 const declarationSrcDir = path.resolve(__dirname, "../dist/scratch");
 const declarationFile = path.resolve(__dirname, "..", pkg.types);
-const shaderDir = path.resolve(__dirname, "shaders");
+const shaderDir = path.resolve(__dirname, "glsl");
 
 export default {
     input: path.resolve(__dirname, 'WebGL.ts'),
