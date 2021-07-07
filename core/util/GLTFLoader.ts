@@ -1,5 +1,5 @@
 import {Scene} from "../Scene";
-import * as GLTF from "./Schema";
+import * as GLTF from "./GLTFSchema";
 import {Node} from "../Node";
 import {Attribute, AttributeType, ElementBuffer, Mesh, Primitive} from "../Mesh";
 import {Bounds} from "../Bounds";
@@ -9,9 +9,9 @@ import {vec3, vec4, quat, mat4} from "gl-matrix"
 import {Texture} from "../Texture";
 import {PhongMaterial} from "../shader/Phong";
 
-export class Loader {
+export class GLTFLoader {
     private _baseUrl: string;
-    private _gltf: GLTF.Schema = null;
+    private _gltf: GLTF.GLTFSchema = null;
     private _glb: BinaryGltf = null;
     private _meshes: Mesh[] = null;
     private _arrayBuffers: DataView[] = null;
@@ -27,10 +27,10 @@ export class Loader {
     public constructor(
         private _scene: Scene)
     {
-        if (Loader._attributeNameToType.size === 0) {
-            Loader._attributeNameToType.set("POSITION", AttributeType.Position);
-            Loader._attributeNameToType.set("NORMAL", AttributeType.Normal);
-            Loader._attributeNameToType.set("TEXCOORD_0", AttributeType.TexCoord0);
+        if (GLTFLoader._attributeNameToType.size === 0) {
+            GLTFLoader._attributeNameToType.set("POSITION", AttributeType.Position);
+            GLTFLoader._attributeNameToType.set("NORMAL", AttributeType.Normal);
+            GLTFLoader._attributeNameToType.set("TEXCOORD_0", AttributeType.TexCoord0);
         }
     }
 
@@ -62,7 +62,7 @@ export class Loader {
 
     public async load(url: string) {
         const response = await this._requestResource(url);
-        this._gltf = JSON.parse(await response.text()) as GLTF.Schema;
+        this._gltf = JSON.parse(await response.text()) as GLTF.GLTFSchema;
         await this._load();
     }
 
@@ -70,7 +70,7 @@ export class Loader {
         const response = await this._requestResource(url);
 
         this._glb = BinaryGltf.parse(await response.arrayBuffer());
-        this._gltf = this._glb.json as GLTF.Schema;
+        this._gltf = this._glb.json as GLTF.GLTFSchema;
 
         await this._load();
     }
@@ -233,14 +233,14 @@ export class Loader {
         const accessor = this._gltf.accessors[index];
         const bufferView = this._gltf.bufferViews[accessor.bufferView];
 
-        const attributeType = Loader._attributeNameToType.get(gltfName);
+        const attributeType = GLTFLoader._attributeNameToType.get(gltfName);
         if (attributeType === undefined)
             return null;
 
         return new Attribute(
             attributeType,
-            Loader._getComponentType(accessor.componentType, this._scene.gl),
-            Loader._getComponentElementCount(accessor.type),
+            GLTFLoader._getComponentType(accessor.componentType, this._scene.gl),
+            GLTFLoader._getComponentElementCount(accessor.type),
             accessor.count,
             accessor.byteOffset,
             bufferView.byteStride ? bufferView.byteStride : 0,
@@ -252,7 +252,7 @@ export class Loader {
         const accessor = this._gltf.accessors[index];
 
         return new ElementBuffer(
-            Loader._getComponentType(accessor.componentType, this._scene.gl),
+            GLTFLoader._getComponentType(accessor.componentType, this._scene.gl),
             accessor.count,
             accessor.byteOffset,
             await this._createGlBufferFromView(accessor.bufferView)

@@ -1,5 +1,5 @@
 import {glMatrix} from "gl-matrix";
-import {Arcball, Headlight, Loader, Scene} from "webgl"
+import {Arcball, Headlight, GLTFLoader, Scene} from "webgl"
 
 let webGl: Scene = null;
 let arcball: Arcball = null;
@@ -8,7 +8,7 @@ let headlight: Headlight = null;
 const modelDomain = "https://webgl-models.s3-us-west-1.amazonaws.com/";
 
 async function loadModel(modelPath: string) {
-    const loader = new Loader(webGl);
+    const loader = new GLTFLoader(webGl);
     const isBinary = modelPath.endsWith(".glb");
     const modelUrl = modelDomain + modelPath;
 

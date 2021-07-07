@@ -95,7 +95,7 @@ export interface Image {
     mimeType?: string;
 }
 
-export interface Schema {
+export interface GLTFSchema {
     scene?: number;
     scenes?: Scene[];
     nodes?: Node[];
