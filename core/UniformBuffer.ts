@@ -1,7 +1,10 @@
-import {Light, Lights} from "../Light";
+import {Light, Lights} from "./Light";
 
 import {mat4, vec3, vec4} from "gl-matrix"
 
+/**
+ * This class encapsulates the per-object uniform data that is set before each draw call
+ */
 export class ObjectUniformBuffer {
     private static size = (16 + 16) * 4;
     public static readonly defaultBindIndex = 1;
@@ -39,6 +42,7 @@ export class ObjectUniformBuffer {
 }
 
 /**
+ * This class encasulates the global uniform data that is set once per shader program activation.
     Layout:
     mat4 camera_projection (64)
     mat4 camera_view       (64)

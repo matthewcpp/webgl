@@ -3,7 +3,7 @@ import {Node} from "./Node";
 import {ShaderProgram} from "./Shader";
 import {Mesh, Primitive} from "./Mesh";
 import {MeshInstance} from "./MeshInstance";
-import {ObjectUniformBuffer, UniformBuffer} from "./shader/UniformBuffer";
+import {ObjectUniformBuffer, UniformBuffer} from "./UniformBuffer";
 import {Lights} from "./Light";
 
 import {mat4, vec4} from "gl-matrix"

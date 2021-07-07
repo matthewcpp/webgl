@@ -1,7 +1,7 @@
 import {Node} from "./Node.js";
 
 import {vec3} from "gl-matrix"
-import {UniformBuffer} from "./shader/UniformBuffer";
+import {UniformBuffer} from "./UniformBuffer";
 
 export enum LightType {
     Directional,
