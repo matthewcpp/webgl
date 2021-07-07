@@ -1,17 +1,16 @@
-import {Mesh, Meshes} from "./Mesh"
+import {Meshes} from "./Mesh"
 import {MeshInstances} from "./MeshInstance";
 import {Renderer} from "./Renderer";
 import {Textures} from "./Texture"
 import {Node} from "./Node";
 import {Camera} from "./Camera";
 import {Shaders} from "./Shader";
-import {Light, LightType, Lights} from "./Light";
+import {LightType, Lights} from "./Light";
 import {Bounds} from "./Bounds";
 
 import {quat, vec3} from "gl-matrix";
 import {PhongShader} from "./shader/Phong";
 import {UnlitShader} from "./shader/Unlit";
-import {Arcball} from "./behaviors/Arcball";
 
 export class Scene {
     public readonly canvas: HTMLCanvasElement;
