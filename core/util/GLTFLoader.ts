@@ -21,6 +21,7 @@ export class GLTFLoader {
     private _materials: PhongMaterial[] = null;
 
     public autoscaleScene = true;
+    public meshInstanceLayerMask = 1;
 
     static readonly _attributeNameToType = new Map<string, AttributeType>();
 
@@ -133,7 +134,8 @@ export class GLTFLoader {
             wglNode.name = gltfNode.name;
 
         if (gltfNode.hasOwnProperty("mesh")) {
-            this._scene.meshInstances.create(wglNode, await this._getMesh(gltfNode.mesh));
+            const meshInstance = this._scene.meshInstances.create(wglNode, await this._getMesh(gltfNode.mesh));
+            meshInstance.layerMask = this.meshInstanceLayerMask;
         }
 
         return wglNode;

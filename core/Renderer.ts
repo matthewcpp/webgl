@@ -29,6 +29,7 @@ export class Renderer {
     private readonly _drawCalls = new Map<ShaderProgram, DrawCall[]>();
 
     private _lights: Lights;
+    private _lightMask = 0xFFFF;
     private _meshInstances: MeshInstance[] = [];
 
     public renderTarget: RenderTarget | null = null;
@@ -55,10 +56,13 @@ export class Renderer {
         this._uniformBuffer.cameraWorldPos = this.camera.node.position;
     }
 
-    private prepareDraw(root: Node) {
+    private prepareDraw() {
         this._drawCalls.clear();
 
         for (const meshInstance of this._meshInstances) {
+            if ((this.camera.cullingMask & meshInstance.layerMask) === 0)
+                continue;
+
             for (let i  = 0; i < meshInstance.mesh.primitives.length; i++) {
                 // Temporary
                 if (meshInstance.mesh.primitives[i].type != this.gl.TRIANGLES)
@@ -82,15 +86,30 @@ export class Renderer {
 
     public clear() {
         this._meshInstances = [];
-        this._camera = null;
+        this.camera = null;
     }
 
     private updateLights() {
-        this._uniformBuffer.lightCount = this._lights.items.length;
+        let lightCount = 0;
 
-        for (let i = 0; i < this._lights.items.length; i++)
-            this._uniformBuffer.setLight(i, this._lights.items[i]);
+        for (let i = 0; i < this._lights.items.length; i++){
+            const light = this._lights.items[i];
+
+            if ((this._lightMask & light.layerMask) === 0)
+                continue;
+
+            this._uniformBuffer.setLight(lightCount++, light);
+        }
+
+        this._uniformBuffer.lightCount = lightCount;
     }
+
+    public draw() {
+        const gl = this.gl;
+        this._updateCamera();
+        this.prepareDraw();
+        this._lightMask = 0;
+
         if (this.renderTarget){
             gl.bindFramebuffer(gl.FRAMEBUFFER, this.renderTarget.handle);
             gl.viewport(0, 0, this.renderTarget.colorTexture.width, this.renderTarget.colorTexture.height);
@@ -123,6 +142,17 @@ export class Renderer {
         const normalMatrix = mat4.create();
 
         for (const drawCall of drawCalls) {
+            // check the lighting state
+            if (drawCall.meshInstance.layerMask != this._lightMask) {
+                this._lightMask = drawCall.meshInstance.layerMask;
+                this.updateLights();
+                this._uniformBuffer.updateGpuBuffer();
+            }
+
+            const matrix = drawCall.meshInstance.node.worldMatrix;
+            const material = drawCall.meshInstance.getReadonlyMaterial(drawCall.primitive);
+            const primitive = drawCall.meshInstance.mesh.primitives[drawCall.primitive];
+
             // set the uniform buffer values for this particular object and upload to GPU
             this._objectUniformBuffer.matrix.set(drawCall.matrix, 0);
             mat4.invert(normalMatrix, drawCall.matrix);

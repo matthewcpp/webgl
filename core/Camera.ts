@@ -13,6 +13,8 @@ export class Camera {
     private _projectionMatrix: mat4 = mat4.create();
     private _viewMatrix: mat4 = mat4.create();
 
+    public cullingMask = 0xFFFF;
+
     constructor(
         public readonly node: Node
     ) {}
