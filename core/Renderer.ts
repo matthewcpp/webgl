@@ -12,9 +12,8 @@ import {RenderTarget} from "./RenderTarget";
 
 class DrawCall {
     public constructor(
-        public material: Material,
-        public primitive: Primitive,
-        public matrix: mat4,
+        public meshInstance: MeshInstance,
+        public primitive: number
     ) {}
 }
 
@@ -69,7 +68,7 @@ export class Renderer {
                     return;
 
                 const material = meshInstance.getReadonlyMaterial(i);
-                const drawCall = new DrawCall(material, meshInstance.mesh.primitives[i], meshInstance.node.worldMatrix);
+                const drawCall = new DrawCall(meshInstance, i);
 
                 if (this._drawCalls.has(material.program))
                     this._drawCalls.get(material.program).push(drawCall);
@@ -121,7 +120,6 @@ export class Renderer {
         }
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        this._uniformBuffer.updateGpuBuffer();
 
         this._drawCalls.forEach((drawables: Array<DrawCall>, program: ShaderProgram) => {
             this._drawList(program, drawables);
@@ -154,24 +152,24 @@ export class Renderer {
             const primitive = drawCall.meshInstance.mesh.primitives[drawCall.primitive];
 
             // set the uniform buffer values for this particular object and upload to GPU
-            this._objectUniformBuffer.matrix.set(drawCall.matrix, 0);
-            mat4.invert(normalMatrix, drawCall.matrix);
+            this._objectUniformBuffer.matrix.set(matrix, 0);
+            mat4.invert(normalMatrix, matrix);
             mat4.transpose(normalMatrix, normalMatrix);
             this._objectUniformBuffer.normalMatrix.set(normalMatrix, 0);
             this._objectUniformBuffer.updateGpuBuffer();
 
-            drawCall.material.shader.setUniforms(this.gl, drawCall.material);
+            material.shader.setUniforms(this.gl, material);
 
-            for (const attribute of drawCall.primitive.attributes) {
+            for (const attribute of primitive.attributes) {
                 this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribute.buffer);
                 this.gl.vertexAttribPointer(attribute.type, attribute.componentCount, attribute.componentType, false, attribute.stride, attribute.offset);
                 this.gl.enableVertexAttribArray(attribute.type);
             }
 
-            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, drawCall.primitive.indices.buffer);
-            this.gl.drawElements(drawCall.primitive.type, drawCall.primitive.indices.count, drawCall.primitive.indices.componentType, drawCall.primitive.indices.offset);
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, primitive.indices.buffer);
+            this.gl.drawElements(primitive.type, primitive.indices.count, primitive.indices.componentType, primitive.indices.offset);
 
-            for (const attribute of drawCall.primitive.attributes) {
+            for (const attribute of primitive.attributes) {
                 this.gl.disableVertexAttribArray(attribute.type);
             }
         }
