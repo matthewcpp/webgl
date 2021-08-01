@@ -15,6 +15,8 @@ import {Headlight} from "./util/Headlight";
 import {Arcball} from "./util/Arcball";
 import {GLTFLoader} from "./util/GLTFLoader.js";
 
+import {Cube} from "./primitive/Cube"
+
 export {
     Arcball, Headlight,
     Bounds,
@@ -28,5 +30,6 @@ export {
     RenderTarget,
     Scene,
     Shader, ShaderProgram,
-    Texture
+    Texture,
+    Cube
 }
