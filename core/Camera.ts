@@ -83,3 +83,19 @@ export class Camera {
         }
     }
 }
+
+export class Cameras {
+    public items: Camera[] = [];
+
+    public create(node: Node) {
+        const camera = new Camera(node);
+        node.components.camera = camera;
+        this.items.push(camera);
+
+        return camera;
+    }
+
+    public clear() {
+        this.items = [];
+    }
+}
