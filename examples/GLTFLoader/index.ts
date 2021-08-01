@@ -20,7 +20,7 @@ async function loadModel(modelPath: string) {
         await loader.load(modelUrl);
 
     const mainCamera = scene.cameras.items[0];
-    arcball = new Arcball(mainCamera.node, scene);
+    arcball = new Arcball(mainCamera, scene);
     headlight = new Headlight(scene.lights.items[0], mainCamera);
     arcball.setInitial(scene.calculateWorldBounding());
 }

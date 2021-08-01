@@ -59,12 +59,12 @@ async function initScene() {
     const cubeLight = scene.lights.create(scene.rootNode.createChild("Cube Light"), LightType.Directional);
     cubeLight.layerMask = 4;
 
-    arcball = new Arcball(duckCamera.node, scene);
+    arcball = new Arcball(duckCamera, scene);
     arcball.setInitial(duckBounds);
 
     headlight = new Headlight(duckLight, duckCamera);
 
-    arcball.cameraNode = cubeCamera.node;
+    arcball.camera = cubeCamera;
     arcball.setInitial(cubeBounds);
 
     headlight.reset(cubeLight, cubeCamera);

@@ -1,8 +1,8 @@
 import {Scene} from "../Scene.js";
-import {Node} from "../Node.js"
 import {Bounds} from "../Bounds.js";
 
 import {vec2, vec3, quat} from "gl-matrix";
+import {Camera} from "../Camera";
 
 export class Arcball {
     private _distance = 0.0;
@@ -12,7 +12,7 @@ export class Arcball {
     private _target = vec3.create();
 
     public rotationSpeed = 90.0;
-    public cameraNode: Node;
+    public camera: Camera;
 
     private _dragging = false;
 
@@ -22,8 +22,8 @@ export class Arcball {
 
     private _scene: Scene;
 
-    public constructor(cameraNode: Node, scene: Scene){
-        this.cameraNode = cameraNode;
+    public constructor(camera: Camera, scene: Scene){
+        this.camera = camera;
         this._scene = scene;
 
         scene.canvas.onpointerdown = (event: PointerEvent) => { this._onPointerDown(event); }
@@ -50,7 +50,7 @@ export class Arcball {
         this._diagonal = vec3.distance(worldBounding.min, worldBounding.max);
         this._distance = this._diagonal * 2.0;
 
-        vec3.copy(this.cameraNode.position, worldBounding.max);
+        vec3.copy(this.camera.node.position, worldBounding.max);
 
         this._setCameraPos();
     }
@@ -88,9 +88,9 @@ export class Arcball {
         vec3.subtract(dir, orbitPos, this._target);
         vec3.normalize(dir, dir);
         vec3.scale(dir, dir, this._distance);
-        vec3.add(this.cameraNode.position, this._target, dir);
-        this.cameraNode.lookAt(this._target, upVec);
-        this.cameraNode.components.camera._matricesDirty = true;
+        vec3.add(this.camera.node.position, this._target, dir);
+        this.camera.node.lookAt(this._target, upVec);
+        this.camera.node.components.camera._matricesDirty = true;
     }
 
     private _setCurrentPos(event: PointerEvent) {
