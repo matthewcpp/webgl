@@ -11,6 +11,7 @@ import {Bounds} from "./Bounds";
 import {quat, vec3} from "gl-matrix";
 import {PhongShader} from "./shader/Phong";
 import {UnlitShader} from "./shader/Unlit";
+import {RenderTargets} from "./RenderTarget";
 
 export class Scene {
     public readonly canvas: HTMLCanvasElement;
@@ -43,6 +44,7 @@ export class Scene {
         this.meshes = new Meshes(this.gl);
         this.shaders = new Shaders(this.gl, new PhongShader(), new UnlitShader());
         this.meshInstances = new MeshInstances(this._renderer);
+        this.renderTargets = new RenderTargets(this.gl);
     }
 
     public async init() {

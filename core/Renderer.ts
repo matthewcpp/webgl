@@ -8,6 +8,7 @@ import {Lights} from "./Light";
 
 import {mat4, vec4} from "gl-matrix"
 import {Material} from "./Material";
+import {RenderTarget} from "./RenderTarget";
 
 class DrawCall {
     public constructor(
@@ -20,7 +21,7 @@ class DrawCall {
 export class Renderer {
     private readonly gl: WebGL2RenderingContext;
 
-    private _camera: Camera = null;
+    public camera: Camera = null;
 
     private readonly _uniformBuffer: UniformBuffer;
     private readonly _objectUniformBuffer: ObjectUniformBuffer;
@@ -29,6 +30,8 @@ export class Renderer {
 
     private _lights: Lights;
     private _meshInstances: MeshInstance[] = [];
+
+    public renderTarget: RenderTarget | null = null;
 
     constructor(gl: WebGL2RenderingContext, lights: Lights) {
         this.gl = gl;
@@ -41,13 +44,15 @@ export class Renderer {
         this._objectUniformBuffer = new ObjectUniformBuffer(this.gl);
     }
 
-    public setCamera(camera: Camera) {
-        this._camera = camera;
-        this._camera.aspect = this.gl.canvas.width / this.gl.canvas.height;
+    private _updateCamera() {
+        if (this.renderTarget)
+            this.camera.aspect = this.renderTarget.width / this.renderTarget.height;
+        else
+            this.camera.aspect = this.gl.canvas.width / this.gl.canvas.height;
 
-        this._uniformBuffer.cameraProjection = this._camera.projectionMatrix;
-        this._uniformBuffer.cameraView = this._camera.viewMatrix;
-        this._uniformBuffer.cameraWorldPos = this._camera.node.position;
+        this._uniformBuffer.cameraProjection = this.camera.projectionMatrix;
+        this._uniformBuffer.cameraView = this.camera.viewMatrix;
+        this._uniformBuffer.cameraWorldPos = this.camera.node.position;
     }
 
     private prepareDraw(root: Node) {
@@ -86,17 +91,25 @@ export class Renderer {
         for (let i = 0; i < this._lights.items.length; i++)
             this._uniformBuffer.setLight(i, this._lights.items[i]);
     }
+        if (this.renderTarget){
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.renderTarget.handle);
+            gl.viewport(0, 0, this.renderTarget.colorTexture.width, this.renderTarget.colorTexture.height);
+        }
 
-    public drawScene(node: Node) {
-        this.updateLights();
-        this.prepareDraw(node);
+        else {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+        }
 
-        // set the standard shader data in the local buffer
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         this._uniformBuffer.updateGpuBuffer();
 
         this._drawCalls.forEach((drawables: Array<DrawCall>, program: ShaderProgram) => {
             this._drawList(program, drawables);
         })
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, null);
     }
 
     private _drawList(shaderProgram: ShaderProgram, drawCalls: Array<DrawCall>) {
