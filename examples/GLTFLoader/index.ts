@@ -1,14 +1,14 @@
 import {glMatrix} from "gl-matrix";
 import {Arcball, Headlight, GLTFLoader, Scene} from "webgl"
 
-let webGl: Scene = null;
+let scene: Scene = null;
 let arcball: Arcball = null;
 let headlight: Headlight = null;
 
 const modelDomain = "https://webgl-models.s3-us-west-1.amazonaws.com/";
 
 async function loadModel(modelPath: string) {
-    const loader = new GLTFLoader(webGl);
+    const loader = new GLTFLoader(scene);
     const isBinary = modelPath.endsWith(".glb");
     const modelUrl = modelDomain + modelPath;
 
@@ -19,9 +19,10 @@ async function loadModel(modelPath: string) {
     else
         await loader.load(modelUrl);
 
-    arcball = new Arcball(webGl.mainCamera.node, webGl);
-    headlight = new Headlight(webGl.lights.items[0].node, webGl.mainCamera.node);
-    arcball.setInitial(webGl.calculateWorldBounding());
+    const mainCamera = scene.cameras.items[0];
+    arcball = new Arcball(mainCamera.node, scene);
+    headlight = new Headlight(scene.lights.items[0].node, mainCamera.node);
+    arcball.setInitial(scene.calculateWorldBounding());
 }
 
 async function initScene() {
@@ -29,19 +30,19 @@ async function initScene() {
     const glCanvas = document.querySelector("#gl-canvas") as HTMLCanvasElement;
     glCanvas.oncontextmenu = () => false;
 
-    webGl = new Scene(glCanvas);
-    await webGl.init();
+    scene = new Scene(glCanvas);
+    await scene.init();
 
     window.onresize = () => {
-        webGl.canvasResized();
+        scene.canvasResized();
     }
 }
 
 function initUi() {
     const modelSelector = document.querySelector("#model-select") as HTMLSelectElement;
     modelSelector.onchange = async () => {
-        webGl.clear();
-        webGl.createDefault();
+        scene.clear();
+        scene.createDefault();
 
         await loadModel(modelSelector.value);
     }
@@ -50,7 +51,7 @@ function initUi() {
 function tick(timestamp: DOMHighResTimeStamp) {
     headlight.update();
     arcball.update(timestamp);
-    webGl.draw();
+    scene.renderer.draw();
     requestAnimationFrame(tick);
 }
 
