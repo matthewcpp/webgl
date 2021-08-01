@@ -21,7 +21,7 @@ export class Node {
         public name: string = null
     ) {}
 
-    public addChild(child: Node) {
+    public addChild(child: Node): Node {
         // remove the child from its parent's children array
         if (child.parent)
             child.parent.children.filter((c: Node) => { return c != child; });
@@ -30,6 +30,12 @@ export class Node {
         this.children.push(child);
 
         child.updateMatrix();
+
+        return child;
+    }
+
+    public createChild(name: string) {
+        return this.addChild(new Node(name));
     }
 
     public getChild(index: number) {

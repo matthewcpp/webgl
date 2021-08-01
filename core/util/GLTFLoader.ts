@@ -22,6 +22,7 @@ export class GLTFLoader {
 
     public autoscaleScene = true;
     public meshInstanceLayerMask = 1;
+    public rootNode: Node = null;
 
     static readonly _attributeNameToType = new Map<string, AttributeType>();
 
@@ -48,6 +49,9 @@ export class GLTFLoader {
     }
 
     private async _load() {
+        if (this.rootNode === null)
+            this.rootNode = this._scene.rootNode;
+
         this._meshes = this._gltf.meshes ? new Array<Mesh>(this._gltf.meshes.length) : null;
         this._arrayBuffers = this._gltf.buffers ? new Array<DataView>(this._gltf.buffers.length) : null;
         this._bufferViews = this._gltf.bufferViews ? new Array<DataView>(this._gltf.bufferViews.length) : null;
@@ -61,7 +65,17 @@ export class GLTFLoader {
             return null;
     }
 
+    public get meshes() { return this._meshes; }
+    public get materials() {return this._materials; }
+
     public async load(url: string) {
+        if (url.endsWith(".glb"))
+            return this.loadBinary(url);
+        else
+            return this.loadSeparate(url);
+    }
+
+    public async loadSeparate(url:string) {
         const response = await this._requestResource(url);
         this._gltf = JSON.parse(await response.text()) as GLTF.GLTFSchema;
         await this._load();
@@ -88,7 +102,7 @@ export class GLTFLoader {
 
         // set the root nodes
         for (const rootNode of scene.nodes) {
-            this._scene.rootNode.addChild(webglNodes[rootNode]);
+            this.rootNode.addChild(webglNodes[rootNode]);
         }
 
         // set children nodes
@@ -105,7 +119,7 @@ export class GLTFLoader {
 
         // update all matrices
         Node.freeze = false;
-        this._scene.rootNode.updateMatrix();
+        this.rootNode.updateMatrix();
 
         if (this.autoscaleScene)
             this._autoscaleScene();
