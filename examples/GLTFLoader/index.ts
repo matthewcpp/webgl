@@ -21,7 +21,7 @@ async function loadModel(modelPath: string) {
 
     const mainCamera = scene.cameras.items[0];
     arcball = new Arcball(mainCamera.node, scene);
-    headlight = new Headlight(scene.lights.items[0].node, mainCamera.node);
+    headlight = new Headlight(scene.lights.items[0], mainCamera);
     arcball.setInitial(scene.calculateWorldBounding());
 }
 

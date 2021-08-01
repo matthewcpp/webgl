@@ -62,12 +62,12 @@ async function initScene() {
     arcball = new Arcball(duckCamera.node, scene);
     arcball.setInitial(duckBounds);
 
-    headlight = new Headlight(duckLight.node, duckCamera.node);
+    headlight = new Headlight(duckLight, duckCamera);
 
     arcball.cameraNode = cubeCamera.node;
     arcball.setInitial(cubeBounds);
 
-    headlight.reset(cubeLight.node, cubeCamera.node);
+    headlight.reset(cubeLight, cubeCamera);
     lastUpdate = performance.now();
 }
 
