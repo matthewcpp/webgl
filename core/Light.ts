@@ -18,6 +18,8 @@ export class Light {
     public spotInnerAngle = 12.5;
     public spotOuterAngle = 45.0;
 
+    public layerMask = 0xFFFF;
+
     public constructor(
         public type: LightType,
         public readonly node: Node

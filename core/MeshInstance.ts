@@ -9,6 +9,7 @@ export class MeshInstance {
     public readonly mesh: Mesh;
     public readonly _instanceMaterials: Material[];
     public worldBounds = new Bounds();
+    public layerMask = 1;
 
     public constructor(
         node: Node,

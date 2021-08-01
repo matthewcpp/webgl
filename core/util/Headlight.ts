@@ -5,12 +5,21 @@ import {vec3, quat} from "gl-matrix";
 export class Headlight{
 
     public constructor(
-        private _lightNode: Node,
-        private _cameraNode: Node) {
+        private light: Node,
+        private camera: Node)
+    {
+        this.update();
     }
 
     public update(): void {
-        vec3.copy(this._lightNode.position, this._cameraNode.position);
-        quat.copy(this._lightNode.rotation, this._cameraNode.rotation);
+        vec3.copy(this.light.position, this.camera.position);
+        quat.copy(this.light.rotation, this.camera.rotation);
+    }
+
+    public reset(light:Node, camera: Node) {
+        this.light = light;
+        this.camera = camera;
+
+        this.update();
     }
 }

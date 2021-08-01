@@ -8,19 +8,19 @@ import {Lights} from "./Light";
 
 import {mat4, vec4} from "gl-matrix"
 import {Material} from "./Material";
+import {RenderTarget} from "./RenderTarget";
 
 class DrawCall {
     public constructor(
-        public material: Material,
-        public primitive: Primitive,
-        public matrix: mat4,
+        public meshInstance: MeshInstance,
+        public primitive: number
     ) {}
 }
 
 export class Renderer {
     private readonly gl: WebGL2RenderingContext;
 
-    private _camera: Camera = null;
+    public camera: Camera = null;
 
     private readonly _uniformBuffer: UniformBuffer;
     private readonly _objectUniformBuffer: ObjectUniformBuffer;
@@ -28,7 +28,10 @@ export class Renderer {
     private readonly _drawCalls = new Map<ShaderProgram, DrawCall[]>();
 
     private _lights: Lights;
+    private _lightMask = 0xFFFF;
     private _meshInstances: MeshInstance[] = [];
+
+    public renderTarget: RenderTarget | null = null;
 
     constructor(gl: WebGL2RenderingContext, lights: Lights) {
         this.gl = gl;
@@ -41,26 +44,31 @@ export class Renderer {
         this._objectUniformBuffer = new ObjectUniformBuffer(this.gl);
     }
 
-    public setCamera(camera: Camera) {
-        this._camera = camera;
-        this._camera.aspect = this.gl.canvas.width / this.gl.canvas.height;
+    private _updateCamera() {
+        if (this.renderTarget)
+            this.camera.aspect = this.renderTarget.width / this.renderTarget.height;
+        else
+            this.camera.aspect = this.gl.canvas.width / this.gl.canvas.height;
 
-        this._uniformBuffer.cameraProjection = this._camera.projectionMatrix;
-        this._uniformBuffer.cameraView = this._camera.viewMatrix;
-        this._uniformBuffer.cameraWorldPos = this._camera.node.position;
+        this._uniformBuffer.cameraProjection = this.camera.projectionMatrix;
+        this._uniformBuffer.cameraView = this.camera.viewMatrix;
+        this._uniformBuffer.cameraWorldPos = this.camera.node.position;
     }
 
-    private prepareDraw(root: Node) {
+    private prepareDraw() {
         this._drawCalls.clear();
 
         for (const meshInstance of this._meshInstances) {
+            if ((this.camera.cullingMask & meshInstance.layerMask) === 0)
+                continue;
+
             for (let i  = 0; i < meshInstance.mesh.primitives.length; i++) {
                 // Temporary
                 if (meshInstance.mesh.primitives[i].type != this.gl.TRIANGLES)
                     return;
 
                 const material = meshInstance.getReadonlyMaterial(i);
-                const drawCall = new DrawCall(material, meshInstance.mesh.primitives[i], meshInstance.node.worldMatrix);
+                const drawCall = new DrawCall(meshInstance, i);
 
                 if (this._drawCalls.has(material.program))
                     this._drawCalls.get(material.program).push(drawCall);
@@ -77,26 +85,48 @@ export class Renderer {
 
     public clear() {
         this._meshInstances = [];
-        this._camera = null;
+        this.camera = null;
     }
 
     private updateLights() {
-        this._uniformBuffer.lightCount = this._lights.items.length;
+        let lightCount = 0;
 
-        for (let i = 0; i < this._lights.items.length; i++)
-            this._uniformBuffer.setLight(i, this._lights.items[i]);
+        for (let i = 0; i < this._lights.items.length; i++){
+            const light = this._lights.items[i];
+
+            if ((this._lightMask & light.layerMask) === 0)
+                continue;
+
+            this._uniformBuffer.setLight(lightCount++, light);
+        }
+
+        this._uniformBuffer.lightCount = lightCount;
     }
 
-    public drawScene(node: Node) {
-        this.updateLights();
-        this.prepareDraw(node);
+    public draw() {
+        const gl = this.gl;
+        this._updateCamera();
+        this.prepareDraw();
+        this._lightMask = 0;
 
-        // set the standard shader data in the local buffer
-        this._uniformBuffer.updateGpuBuffer();
+        if (this.renderTarget){
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.renderTarget.handle);
+            gl.viewport(0, 0, this.renderTarget.colorTexture.width, this.renderTarget.colorTexture.height);
+        }
+
+        else {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+        }
+
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         this._drawCalls.forEach((drawables: Array<DrawCall>, program: ShaderProgram) => {
             this._drawList(program, drawables);
         })
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, null);
     }
 
     private _drawList(shaderProgram: ShaderProgram, drawCalls: Array<DrawCall>) {
@@ -110,25 +140,36 @@ export class Renderer {
         const normalMatrix = mat4.create();
 
         for (const drawCall of drawCalls) {
+            // check the lighting state
+            if (drawCall.meshInstance.layerMask != this._lightMask) {
+                this._lightMask = drawCall.meshInstance.layerMask;
+                this.updateLights();
+                this._uniformBuffer.updateGpuBuffer();
+            }
+
+            const matrix = drawCall.meshInstance.node.worldMatrix;
+            const material = drawCall.meshInstance.getReadonlyMaterial(drawCall.primitive);
+            const primitive = drawCall.meshInstance.mesh.primitives[drawCall.primitive];
+
             // set the uniform buffer values for this particular object and upload to GPU
-            this._objectUniformBuffer.matrix.set(drawCall.matrix, 0);
-            mat4.invert(normalMatrix, drawCall.matrix);
+            this._objectUniformBuffer.matrix.set(matrix, 0);
+            mat4.invert(normalMatrix, matrix);
             mat4.transpose(normalMatrix, normalMatrix);
             this._objectUniformBuffer.normalMatrix.set(normalMatrix, 0);
             this._objectUniformBuffer.updateGpuBuffer();
 
-            drawCall.material.shader.setUniforms(this.gl, drawCall.material);
+            material.shader.setUniforms(this.gl, material);
 
-            for (const attribute of drawCall.primitive.attributes) {
+            for (const attribute of primitive.attributes) {
                 this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribute.buffer);
                 this.gl.vertexAttribPointer(attribute.type, attribute.componentCount, attribute.componentType, false, attribute.stride, attribute.offset);
                 this.gl.enableVertexAttribArray(attribute.type);
             }
 
-            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, drawCall.primitive.indices.buffer);
-            this.gl.drawElements(drawCall.primitive.type, drawCall.primitive.indices.count, drawCall.primitive.indices.componentType, drawCall.primitive.indices.offset);
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, primitive.indices.buffer);
+            this.gl.drawElements(primitive.type, primitive.indices.count, primitive.indices.componentType, primitive.indices.offset);
 
-            for (const attribute of drawCall.primitive.attributes) {
+            for (const attribute of primitive.attributes) {
                 this.gl.disableVertexAttribArray(attribute.type);
             }
         }

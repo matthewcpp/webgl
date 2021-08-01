@@ -1,5 +1,8 @@
 import {Bounds} from "./Bounds";
 import {Material} from "./Material";
+import {vec3} from "gl-matrix";
+import {PhongMaterial} from "./shader/Phong";
+import {Shaders} from "./Shader";
 
 /**
  * The value of each attribute corresponds to the attribute location in the shader
@@ -99,21 +102,110 @@ export class Mesh {
     }
 }
 
+class PrimitiveData {
+    public constructor(
+        public elements: Uint16Array,
+        public material: Material
+    ){}
+}
+
+export class MeshData {
+    public positions: Float32Array | null = null;
+    public normals: Float32Array | null = null;
+    public texCoords0: Float32Array | null = null;
+
+    public bounds = new Bounds();
+
+    public primitives: PrimitiveData[] = [];
+
+    public constructor() {
+        vec3.set(this.bounds.min, 0.0, 0.0, 0.0);
+        vec3.set(this.bounds.max, 0.0, 0.0, 0.0);
+    }
+
+    public addPrimitive(elements: Uint16Array, material: Material) {
+        this.primitives.push(new PrimitiveData(elements, material));
+    }
+}
+
+function _vertexBufferSize(meshData: MeshData) {
+    let size = 0;
+
+    if (meshData.positions)
+        size += meshData.positions.byteLength;
+
+    if (meshData.normals)
+        size += meshData.normals.byteLength;
+
+    if (meshData.texCoords0)
+        size += meshData.texCoords0.byteLength;
+
+    return size;
+}
+
 export class Meshes {
     items: Mesh[] = [];
 
     public constructor(
-        private _gl: WebGL2RenderingContext
+        private _gl: WebGL2RenderingContext,
+        private _shaders: Shaders
     ) {}
 
-    create(primitives: Primitive[]) {
+    public create(primitives: Primitive[]) {
         const mesh = new Mesh(primitives);
         this.items.push(mesh);
 
         return mesh;
     }
 
-    clear() {
+    public createFromData(meshData) {
+        const gl = this._gl;
+
+        const vertexGlBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexGlBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, _vertexBufferSize(meshData), gl.STATIC_DRAW);
+
+        const attributes: Attribute[] = [];
+
+        let offset = 0;
+        if (meshData.positions) {
+            gl.bufferSubData(gl.ARRAY_BUFFER, offset, meshData.positions);
+            attributes.push(new Attribute(AttributeType.Position, gl.FLOAT, 3, meshData.positions.length / 3, offset, 0, vertexGlBuffer));
+            offset += meshData.positions.byteLength;
+        }
+
+        if (meshData.normals) {
+            gl.bufferSubData(gl.ARRAY_BUFFER, offset, meshData.normals);
+            attributes.push(new Attribute(AttributeType.Normal, gl.FLOAT, 3, meshData.normals.length / 3, offset, 0, vertexGlBuffer))
+            offset += meshData.normals.byteLength;
+        }
+
+        if (meshData.texCoords0) {
+            gl.bufferSubData(gl.ARRAY_BUFFER, offset, meshData.texCoords0);
+            attributes.push(new Attribute(AttributeType.TexCoord0, gl.FLOAT, 2, meshData.texCoords0.length / 2, offset, 0, vertexGlBuffer))
+            offset += meshData.texCoords0.length;
+        }
+
+        const primitives: Primitive[] = [];
+
+        for (const primitiveData of meshData.primitives) {
+            const elementGlBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementGlBuffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, primitiveData.elements, gl.STATIC_DRAW);
+
+            const elementBuffer = new ElementBuffer(gl.UNSIGNED_SHORT, primitiveData.elements.length, 0 , elementGlBuffer);
+
+            const material = new PhongMaterial(this._shaders.defaultPhong);
+            const primitive = new Primitive(gl.TRIANGLES, elementBuffer, attributes, meshData.bounds, material);
+            this._shaders.updateProgram(material, primitive);
+
+            primitives.push(primitive);
+        }
+
+        return this.create(primitives);
+    }
+
+    public clear() {
         for (const mesh of this.items) {
             mesh.freeGlResources(this._gl);
         }

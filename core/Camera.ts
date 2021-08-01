@@ -13,6 +13,8 @@ export class Camera {
     private _projectionMatrix: mat4 = mat4.create();
     private _viewMatrix: mat4 = mat4.create();
 
+    public cullingMask = 0xFFFF;
+
     constructor(
         public readonly node: Node
     ) {}
@@ -79,5 +81,21 @@ export class Camera {
             this._fovy = value;
             this._matricesDirty = true;
         }
+    }
+}
+
+export class Cameras {
+    public items: Camera[] = [];
+
+    public create(node: Node) {
+        const camera = new Camera(node);
+        node.components.camera = camera;
+        this.items.push(camera);
+
+        return camera;
+    }
+
+    public clear() {
+        this.items = [];
     }
 }
