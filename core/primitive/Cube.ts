@@ -1,4 +1,4 @@
-import {MeshData} from "../Mesh";
+import {MeshData} from "../MeshData";
 import {Scene} from "../Scene";
 import {vec3} from "gl-matrix";
 import {PhongMaterial} from "../shader/Phong";
@@ -50,6 +50,6 @@ export class Cube {
 
         meshData.addPrimitive(elementData, material);
 
-        return scene.meshes.createFromData(meshData);
+        return meshData.create(scene);
     }
 }

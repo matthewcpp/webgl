@@ -4,6 +4,7 @@ import {Components} from "./Components";
 import {Light, LightType} from "./Light";
 import {Material} from "./Material";
 import {Mesh, Attribute, ElementBuffer, Primitive} from "./Mesh";
+import {MeshData} from "./MeshData";
 import {MeshInstance} from "./MeshInstance";
 import {Node} from "./Node"
 import {RenderTarget} from "./RenderTarget";
@@ -26,6 +27,7 @@ export {
     GLTFLoader,
     Material,
     Mesh, MeshInstance, Attribute, ElementBuffer, Primitive,
+    MeshData,
     Node,
     RenderTarget,
     Scene,
