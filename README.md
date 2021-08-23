@@ -2,10 +2,6 @@
 
 This is a simple to use framework for creating small graphics demos using WebGL2.
 
-### Getting Started
-
-The [@matthewcpp/webgl-samples](https://github.com/matthewcpp/webgl-examples) repo contains detailed example scenes showcasing the framework's features.
-
 ### Building the Core Framework
 The framework is built using rollup.  [gl-matrix](https://github.com/toji/gl-matrix) is configured as an external dependency. 
 To build the distribution bundle run the following command:
@@ -27,8 +23,9 @@ npm run build-example <example-name>
     ```shell
     npm run init-deps
     ```
-1. Next build the example that you are working on (see above)
-1. Start the development server:
+2. Next build the example that you are working on (see above)
+3. Start the development server:
    ```shell
    npm run server
    ```
+4. Access the example: at http://localhost:8080/examples/<ExampleName>
